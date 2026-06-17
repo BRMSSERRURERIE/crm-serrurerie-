@@ -76,6 +76,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .pipe-add{width:100%;margin-top:4px;padding:6px;border:1.5px dashed var(--g300);border-radius:var(--r);background:transparent;color:var(--g400);font-size:12px;font-weight:600;cursor:pointer;transition:.15s}
 .pipe-add:hover{background:#fff;border-color:var(--bl);color:var(--bl)}
 
+/* STOCK */
+.stk-item{background:#fff;border:1px solid var(--g200);border-radius:var(--r);padding:12px 15px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:.15s}
+.stk-item:hover{box-shadow:var(--sh2);border-color:var(--bl)}
+.stk-item.low{border-left:3px solid var(--rd)}
+.stk-qte-badge{min-width:44px;height:44px;border-radius:var(--r);display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700;font-size:18px;flex-shrink:0}
+.stk-qte-badge.ok{background:var(--gr-lt);color:var(--gr)}
+.stk-qte-badge.low{background:#fee2e2;color:var(--rd)}
+.stk-qte-badge.warn{background:var(--am-lt);color:var(--am)}
+.stk-info{flex:1;min-width:0}
+.stk-nom{font-size:13px;font-weight:600;color:var(--g900)}
+.stk-meta{font-size:11px;color:var(--g500);margin-top:2px}
+.stk-actions{display:flex;gap:6px;align-items:center}
+.stk-btn{padding:4px 8px;border-radius:6px;border:1px solid var(--g200);background:#fff;cursor:pointer;font-size:16px;transition:.15s;color:var(--g700)}
+.stk-btn:hover{background:var(--g100)}
+
 /* PAGE HEADER */
 .ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:18px;gap:10px;flex-wrap:wrap}
 .pt{font-size:18px;font-weight:700;color:var(--g900)}
@@ -333,6 +348,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="ni" id="ni-mesures" onclick="goTo('mesures')"><span class="ico">📐</span><span>Mesures</span></div>
     <div class="ni" id="ni-clients" onclick="goTo('clients')"><span class="ico">👥</span><span>Clients</span></div>
     <div class="ni" id="ni-taches" onclick="goTo('taches')"><span class="ico">✅</span><span>Tâches</span></div>
+    <div class="ni" id="ni-stock" onclick="goTo('stock')"><span class="ico">📦</span><span>Stock</span></div>
   </nav>
 </div>
 
@@ -346,6 +362,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="mn-item" id="mn-mesures" onclick="goTo('mesures')"><span class="mn-ico">📐</span><span class="mn-lbl">Mesures</span></div>
     <div class="mn-item" id="mn-taches" onclick="goTo('taches')"><span class="mn-ico">✅</span><span class="mn-lbl">Tâches</span></div>
     <div class="mn-item" id="mn-achats" onclick="goTo('achats')"><span class="mn-ico">🛒</span><span class="mn-lbl">Achats</span></div>
+    <div class="mn-item" id="mn-stock" onclick="goTo('stock')"><span class="mn-ico">📦</span><span class="mn-lbl">Stock</span></div>
   </div>
 </div>
 
@@ -463,9 +480,54 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div id="tk-up-s"><div class="stitle">À venir</div><div id="tk-up"></div></div>
     <div id="tk-nd-s"><div class="stitle">Sans date</div><div id="tk-nd"></div></div>
   </div>
+
+  <!-- STOCK -->
+  <div class="page" id="pg-stock">
+    <div class="ph">
+      <div><div class="pt">Stock</div><div class="ps" id="stock-sub"></div></div>
+      <div class="ph-right">
+        <button class="btn btn-p" onclick="openStk()">+ Ajouter article</button>
+      </div>
+    </div>
+    <div style="display:flex;gap:6px;margin-bottom:14px">
+      <button class="dfbtn ser on" id="stk-tab-ser" onclick="stkTab('serrurerie')">🔑 Serrurerie</button>
+      <button class="dfbtn vol" id="stk-tab-vol" onclick="stkTab('volets')">📋 Volets</button>
+      <button class="dfbtn all" id="stk-tab-all" onclick="stkTab('all')">Tous</button>
+    </div>
+    <div id="stk-list"></div>
+  </div>
 </div>
 
 <!-- ══════════════════════ MODALS ══════════════════════════ -->
+
+<!-- STOCK ARTICLE -->
+<div class="mo" id="mo-stk">
+  <div class="md">
+    <div class="mh"><span class="mt" id="stk-title">Nouvel article</span><button class="mc" onclick="X('mo-stk')">✕</button></div>
+    <div class="mb">
+      <input type="hidden" id="stk-id">
+      <div class="fr">
+        <div class="fg"><label class="fl">Nom *</label><input class="fi" id="stk-nom" placeholder="Ex: Cylindre Mul-T-Lock"></div>
+        <div class="fg"><label class="fl">Référence</label><input class="fi" id="stk-ref" placeholder="Ex: MT5+"></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Marque</label><input class="fi" id="stk-marque" placeholder="Ex: Mul-T-Lock"></div>
+        <div class="fg"><label class="fl">Catégorie</label><select class="fs" id="stk-dom"><option value="serrurerie">🔑 Serrurerie</option><option value="volets">📋 Volets</option></select></div>
+      </div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Quantité en stock</label><input class="fi" id="stk-qte" type="number" min="0" placeholder="0"></div>
+        <div class="fg"><label class="fl">Alerte stock bas (min)</label><input class="fi" id="stk-qtemin" type="number" min="0" placeholder="Ex: 2"></div>
+      </div>
+      <div class="fg"><label class="fl">Prix unitaire (€)</label><input class="fi" id="stk-prix" type="number" step="0.01" placeholder="0.00"></div>
+      <div class="fg"><label class="fl">Notes</label><textarea class="fta" id="stk-not" rows="2" placeholder="Fournisseur, compatibilité..."></textarea></div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-d btn-sm" id="btn-del-stk" onclick="delStk()" style="display:none;margin-right:auto">Supprimer</button>
+      <button class="btn btn-s" onclick="X('mo-stk')">Annuler</button>
+      <button class="btn btn-p" onclick="saveStk()">Enregistrer</button>
+    </div>
+  </div>
+</div>
 
 <!-- CLIENT -->
 <div class="mo" id="mo-cli">
@@ -688,7 +750,7 @@ firebase.initializeApp({
 const db=firebase.firestore();
 const auth=firebase.auth();
 let currentUser=null;
-const FS_COLS=['clients','affaires','taches','events','achats','mesures'];
+const FS_COLS=['clients','affaires','taches','events','achats','mesures','stock'];
 
 function setSyncStatus(state){
   const dot=document.getElementById('sync-dot');
@@ -807,8 +869,8 @@ function setDF(s,v){
 }
 
 // ── NAV ───────────────────────────────────────────────────────
-const PAGES=['dashboard','pipeline','agenda','achats','mesures','clients','taches'];
-const TITLES={dashboard:'Tableau de bord',pipeline:'Pipeline commercial',agenda:'Agenda',achats:'Achats fournisseurs',mesures:'Prises de mesures',clients:'Clients',taches:'Tâches'};
+const PAGES=['dashboard','pipeline','agenda','achats','mesures','clients','taches','stock'];
+const TITLES={dashboard:'Tableau de bord',pipeline:'Pipeline commercial',agenda:'Agenda',achats:'Achats fournisseurs',mesures:'Prises de mesures',clients:'Clients',taches:'Tâches',stock:'Stock'};
 let curPage='dashboard';
 function goTo(p){
   curPage=p;
@@ -824,6 +886,7 @@ function render(p){
   if(p==='mesures')renderMesures();
   if(p==='clients')renderClients();
   if(p==='taches')renderTaches();
+  if(p==='stock')renderStock();
   updateBadges();
 }
 
@@ -1139,6 +1202,80 @@ function renderTaches(){
 }
 function toggleTsk(id){const tk=taches();const i=tk.findIndex(x=>x.id===id);if(i<0)return;tk[i].done=!tk[i].done;save('taches',tk);render(curPage);toast(tk[i].done?'Tâche terminée ✓':'Tâche rouverte');}
 
+// ── STOCK ─────────────────────────────────────────────────────
+const stock=()=>load('stock');
+let stkDom='serrurerie';
+function stkTab(d){
+  stkDom=d;
+  ['ser','vol','all'].forEach(t=>document.getElementById('stk-tab-'+t)?.classList.remove('on'));
+  const map={serrurerie:'ser',volets:'vol',all:'all'};
+  document.getElementById('stk-tab-'+(map[d]||d))?.classList.add('on');
+  renderStock();
+}
+function renderStock(){
+  let items=stock();
+  if(stkDom!=='all')items=items.filter(x=>x.dom===stkDom);
+  items.sort((a,b)=>a.nom.localeCompare(b.nom));
+  const bas=stock().filter(x=>x.qteMin>0&&x.qte<=x.qteMin).length;
+  document.getElementById('stock-sub').textContent=stock().length+' article'+(stock().length!==1?'s':'')+' · '+bas+' en stock bas';
+  if(!items.length){document.getElementById('stk-list').innerHTML='<div class="empty"><div class="empty-ico">📦</div><div class="empty-txt">Aucun article — cliquez "+ Ajouter article"</div></div>';return;}
+  document.getElementById('stk-list').innerHTML=items.map(a=>{
+    const isLow=a.qteMin>0&&a.qte<=a.qteMin;
+    const isWarn=a.qteMin>0&&a.qte<=a.qteMin*1.5&&!isLow;
+    const badgeCls=isLow?'low':isWarn?'warn':'ok';
+    return`<div class="stk-item ${isLow?'low':''}" onclick="openStk('${a.id}')">
+      <div class="stk-qte-badge ${badgeCls}"><span>${a.qte??0}</span><span style="font-size:8px;font-weight:500">unités</span></div>
+      <div class="stk-info">
+        <div class="stk-nom">${a.nom}${isLow?'<span style="margin-left:6px;font-size:10px;color:var(--rd);font-weight:600">⚠ Stock bas</span>':''}</div>
+        <div class="stk-meta">${a.ref?'Réf: '+a.ref+' · ':''} ${a.marque||''} ${a.prix?'· '+a.prix+' €/u':''}</div>
+      </div>
+      <div class="stk-actions">
+        <button class="stk-btn" onclick="stkQte(event,'${a.id}',-1)" title="Retirer 1">−</button>
+        <button class="stk-btn" onclick="stkQte(event,'${a.id}',1)" title="Ajouter 1">+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function stkQte(ev,id,delta){
+  ev.stopPropagation();
+  const items=stock();const i=items.findIndex(x=>x.id===id);if(i<0)return;
+  items[i].qte=Math.max(0,(items[i].qte||0)+delta);
+  save('stock',items);renderStock();updateBadges();
+  toast(delta>0?'+ 1 unité':'- 1 unité');
+}
+function openStk(id){
+  const a=id?stock().find(x=>x.id===id):null;
+  document.getElementById('stk-title').textContent=id?'Modifier article':'Nouvel article';
+  document.getElementById('btn-del-stk').style.display=id?'inline-flex':'none';
+  document.getElementById('stk-id').value=id||'';
+  document.getElementById('stk-nom').value=a?.nom||'';
+  document.getElementById('stk-ref').value=a?.ref||'';
+  document.getElementById('stk-marque').value=a?.marque||'';
+  document.getElementById('stk-dom').value=a?.dom||stkDom||'serrurerie';
+  document.getElementById('stk-qte').value=a?.qte??0;
+  document.getElementById('stk-qtemin').value=a?.qteMin||'';
+  document.getElementById('stk-prix').value=a?.prix||'';
+  document.getElementById('stk-not').value=a?.not||'';
+  open_('mo-stk');
+}
+function saveStk(){
+  const nom=document.getElementById('stk-nom').value.trim();
+  if(!nom){toast('⚠ Nom obligatoire');return;}
+  const items=stock();const id=document.getElementById('stk-id').value;
+  const d={nom,ref:document.getElementById('stk-ref').value.trim(),marque:document.getElementById('stk-marque').value.trim(),
+    dom:document.getElementById('stk-dom').value,qte:parseInt(document.getElementById('stk-qte').value)||0,
+    qteMin:parseInt(document.getElementById('stk-qtemin').value)||0,prix:parseFloat(document.getElementById('stk-prix').value)||0,
+    not:document.getElementById('stk-not').value.trim()};
+  if(id){const i=items.findIndex(x=>x.id===id);if(i>=0)Object.assign(items[i],d);}
+  else items.push({id:uid(),createdAt:today(),...d});
+  save('stock',items);X('mo-stk');renderStock();updateBadges();toast(id?'Article mis à jour ✓':'Article ajouté ✓');
+}
+function delStk(){
+  const id=document.getElementById('stk-id').value;if(!id)return;
+  if(!confirm('Supprimer cet article ?'))return;
+  save('stock',stock().filter(x=>x.id!==id));X('mo-stk');renderStock();updateBadges();toast('Article supprimé');
+}
+
 // ── BADGES ────────────────────────────────────────────────────
 function updateBadges(){
   const t=today();
@@ -1146,6 +1283,7 @@ function updateBadges(){
   setBadge('ni-taches',taches().filter(x=>!x.done&&x.ech&&x.ech<=t).length);
   setBadge('ni-achats',achats().filter(a=>a.statut==='a_commander').length);
   setBadge('ni-agenda',events().filter(e=>e.date===t).length);
+  setBadge('ni-stock',stock().filter(x=>x.qteMin>0&&x.qte<=x.qteMin).length);
 }
 function setBadge(ni,n){const el=document.getElementById(ni);el.querySelector('.badge')?.remove();if(n>0)el.insertAdjacentHTML('beforeend',`<span class="badge">${n}</span>`);}
 
