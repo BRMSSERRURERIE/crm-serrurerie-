@@ -525,15 +525,24 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="fg"><label class="fl">Notes</label><textarea class="fta" id="a-not" placeholder="Infos générales..."></textarea></div>
       <label class="fck"><input type="checkbox" id="a-urg"> ⚡ Urgence</label>
 
+      <!-- INFOS PROSPECT — toujours visible -->
+      <div style="background:var(--bl-lt);border:1px solid #bfdbfe;border-radius:var(--r);padding:14px;margin-top:10px">
+        <div style="font-size:12px;font-weight:700;color:var(--bl);margin-bottom:10px">📍 Adresse & contact</div>
+        <div class="fg"><label class="fl">Adresse intervention</label><input class="fi" id="a-adr" placeholder="Ex: 12 rue de la Paix, Paris 75001"></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Code accès / digicode</label><input class="fi" id="a-code" placeholder="Ex: 1234A"></div>
+          <div class="fg"><label class="fl">Étage / accès</label><input class="fi" id="a-etage" placeholder="Ex: 3e droite"></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Téléphone</label><input class="fi" id="a-tel" type="tel" placeholder="Ex: 06 12 34 56 78"></div>
+          <div class="fg"><label class="fl">Email</label><input class="fi" id="a-email" type="email" placeholder="Ex: client@mail.com"></div>
+        </div>
+      </div>
+
       <!-- CHANTIER SECTION — visible quand Signé ou plus -->
       <div id="chantier-section" class="chantier-section" style="display:none">
         <div class="chantier-title">🏗 Détails chantier</div>
-        <div class="fg"><label class="fl">Adresse intervention (si différente du client)</label><input class="fi" id="a-adr" placeholder="Ex: 12 rue de la Paix, Paris 75001"></div>
-        <div class="fr3">
-          <div class="fg"><label class="fl">Code accès / digicode</label><input class="fi" id="a-code" placeholder="Ex: 1234A"></div>
-          <div class="fg"><label class="fl">Étage</label><input class="fi" id="a-etage" placeholder="Ex: 3e droite"></div>
-          <div class="fg"><label class="fl">Date intervention prévue</label><input class="fi" id="a-date-interv" type="date"></div>
-        </div>
+        <div class="fg"><label class="fl">Date intervention prévue</label><input class="fi" id="a-date-interv" type="date"></div>
         <div class="chantier-actions">
           <button class="btn btn-g btn-sm" onclick="addToAgenda()">📅 Ajouter à l'agenda</button>
           <button class="btn btn-s btn-sm" onclick="addMateriel()">🛒 Ajouter du matériel</button>
@@ -890,11 +899,14 @@ function renderPipe(){
           <div class="am"><span style="font-weight:600;color:var(--g700)">${a.mnt?a.mnt+' €':'—'}</span><span class="db ${dCls(a.dom)}">${dLabel(a.dom)}</span></div>
           ${rs?`<div style="margin-top:4px"><span class="rt ${rs}">${rlLabel(a.relance)}</span></div>`:''}
           ${a.devisNums?.length?`<div style="margin-top:4px;font-size:10px;color:var(--am);font-weight:600">📄 ${a.devisNums.join(' · ')}</div>`:''}
+          ${a.adr_chant?`<div style="margin-top:3px;font-size:10px;color:var(--g500)">📍 ${a.adr_chant}${a.code?' · 🔑 '+a.code:''}${a.etage?' · '+a.etage:''}</div>`:''}
+          ${a.tel?`<div style="margin-top:3px;font-size:10px;color:var(--g600)">📞 ${a.tel}</div>`:''}
+          ${a.email?`<div style="margin-top:2px;font-size:10px;color:var(--g600)">✉️ ${a.email}</div>`:''}
           ${SIGNE_PLUS.includes(a.statut)&&a.dateInterv?`<div style="margin-top:4px;font-size:10px;color:var(--gr);font-weight:600">📅 ${fmtDate(a.dateInterv)}</div>`:SIGNE_PLUS.includes(a.statut)&&!a.dateInterv?`<div style="margin-top:5px"><button onclick="planifierInterv(event,'${a.id}')" style="width:100%;padding:5px 8px;border:1.5px dashed var(--am);border-radius:6px;background:var(--am-lt);color:var(--am);font-size:11px;font-weight:600;cursor:pointer">📅 Intervention à planifier</button></div>`:''}
         </div>
         <div class="ac-actions">
-          ${c?.tel?`<a href="tel:${c.tel}" onclick="event.stopPropagation()" class="btn-ico" title="Appeler">📞</a>`:''}
-          ${c?.tel?`<button class="btn-wa" onclick="shareAffWA(event,'${a.id}')" title="Partager sur WhatsApp">💬 WA</button>`:''}
+          ${(c?.tel||a.tel)?`<a href="tel:${c?.tel||a.tel}" onclick="event.stopPropagation()" class="btn-ico" title="Appeler">📞</a>`:''}
+          ${(c?.tel||a.tel)?`<button class="btn-wa" onclick="shareAffWA(event,'${a.id}')" title="Partager sur WhatsApp">💬 WA</button>`:''}
           ${!isLast?`<button class="btn-ico btn-sm" onclick="advAffStatut(event,'${a.id}')" title="Avancer le statut" style="margin-left:auto">→</button>`:''}
         </div>
       </div>`;
@@ -1272,6 +1284,8 @@ function openAff(id,prefill){
   document.getElementById('a-adr').value=a?.adr_chant||'';
   document.getElementById('a-code').value=a?.code||'';
   document.getElementById('a-etage').value=a?.etage||'';
+  document.getElementById('a-tel').value=a?.tel||'';
+  document.getElementById('a-email').value=a?.email||'';
   document.getElementById('a-date-interv').value=a?.dateInterv||'';
   // Devis rows
   document.getElementById('devis-rows').innerHTML='';
@@ -1298,7 +1312,7 @@ function saveAff(){
   }
   const af=affaires(); const id=vl('a-id');
   const d={cid,dom:vl('a-dom'),tit,mnt:vl('a-mnt'),statut:vl('a-sta'),relance:vl('a-rel'),not:vl('a-not'),urg:document.getElementById('a-urg').checked,
-    adr_chant:vl('a-adr'),code:vl('a-code'),etage:vl('a-etage'),dateInterv:vl('a-date-interv'),devisNums:getDevisNums()};
+    adr_chant:vl('a-adr'),code:vl('a-code'),etage:vl('a-etage'),tel:vl('a-tel'),email:vl('a-email'),dateInterv:vl('a-date-interv'),devisNums:getDevisNums()};
   if(id){const i=af.findIndex(x=>x.id===id);if(i>=0)Object.assign(af[i],d);}
   else af.push({id:uid(),createdAt:today(),...d});
   save('affaires',af); X('mo-aff'); render(curPage); toast(id?'Affaire mise à jour ✓':'Affaire créée ✓');
