@@ -9,6 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.8.0/dist/tabler-icons.min.css">
 <style>
 :root{color-scheme:light;
   --bl:#2563eb;--bl-lt:#eff6ff;--gr:#16a34a;--gr-lt:#f0fdf4;
@@ -33,7 +34,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ni{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:var(--r);cursor:pointer;color:var(--g600);font-size:13px;font-weight:500;transition:.15s;margin-bottom:1px;user-select:none;position:relative}
 .ni:hover{background:var(--g100);color:var(--g800)}
 .ni.on{background:var(--bl-lt);color:var(--bl)}
-.ni .ico{width:18px;text-align:center;font-size:15px;flex-shrink:0}
+.ni .ico{width:18px;text-align:center;font-size:16px;flex-shrink:0;line-height:1}
 .badge{margin-left:auto;background:var(--rd);color:#fff;font-size:10px;font-weight:700;padding:1px 5px;border-radius:10px;min-width:16px;text-align:center}
 
 /* MAIN */
@@ -276,9 +277,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--g200);z-index:50;padding:4px 0 env(safe-area-inset-bottom,4px)}
 .mob-nav-inner{display:flex;justify-content:space-around;align-items:center}
 .mn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 8px;border-radius:8px;cursor:pointer;flex:1;min-width:0;transition:.15s;position:relative}
-.mn-item .mn-ico{font-size:20px;line-height:1}
+.mn-item .mn-ico{font-size:22px;line-height:1;color:var(--g400)}
 .mn-item .mn-lbl{font-size:9px;font-weight:600;color:var(--g500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
-.mn-item.on .mn-ico{transform:scale(1.1)}
+.mn-item.on .mn-ico{transform:scale(1.1);color:var(--bl)}
 .mn-item.on .mn-lbl{color:var(--bl)}
 .mn-item .mn-badge{position:absolute;top:2px;right:calc(50% - 14px);background:var(--rd);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center;line-height:1.4}
 
@@ -332,26 +333,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div><div class="sb-name">Mon Activité</div><div class="sb-sub">Serrurerie · Volets</div></div>
   </div>
   <nav class="sb-nav">
-    <div class="ni on" id="ni-dashboard" onclick="goTo('dashboard')"><span class="ico">🏠</span><span>Accueil</span></div>
-    <div class="ni" id="ni-pipeline" onclick="goTo('pipeline')"><span class="ico">📋</span><span>Pipeline</span></div>
-    <div class="ni" id="ni-agenda" onclick="goTo('agenda')"><span class="ico">📅</span><span>Agenda</span></div>
-    <div class="ni" id="ni-achats" onclick="goTo('achats')"><span class="ico">🛒</span><span>Achats</span></div>
-    <div class="ni" id="ni-mesures" onclick="goTo('mesures')"><span class="ico">📐</span><span>Mesures</span></div>
-    <div class="ni" id="ni-clients" onclick="goTo('clients')"><span class="ico">👥</span><span>Clients</span></div>
-    <div class="ni" id="ni-taches" onclick="goTo('taches')"><span class="ico">✅</span><span>Tâches</span></div>
+    <div class="ni on" id="ni-dashboard" onclick="goTo('dashboard')"><i class="ti ti-home ico"></i><span>Accueil</span></div>
+    <div class="ni" id="ni-pipeline" onclick="goTo('pipeline')"><i class="ti ti-layout-kanban ico"></i><span>Pipeline</span></div>
+    <div class="ni" id="ni-agenda" onclick="goTo('agenda')"><i class="ti ti-calendar ico"></i><span>Agenda</span></div>
+    <div class="ni" id="ni-achats" onclick="goTo('achats')"><i class="ti ti-shopping-cart ico"></i><span>Achats</span></div>
+    <div class="ni" id="ni-mesures" onclick="goTo('mesures')"><i class="ti ti-ruler-measure ico"></i><span>Mesures</span></div>
+    <div class="ni" id="ni-clients" onclick="goTo('clients')"><i class="ti ti-users ico"></i><span>Clients</span></div>
+    <div class="ni" id="ni-taches" onclick="goTo('taches')"><i class="ti ti-checkbox ico"></i><span>Tâches</span></div>
   </nav>
 </div>
 
 <!-- MOBILE BOTTOM NAV -->
 <div class="mob-nav">
   <div class="mob-nav-inner">
-    <div class="mn-item on" id="mn-dashboard" onclick="goTo('dashboard')"><span class="mn-ico">🏠</span><span class="mn-lbl">Accueil</span></div>
-    <div class="mn-item" id="mn-pipeline" onclick="goTo('pipeline')"><span class="mn-ico">📋</span><span class="mn-lbl">Pipeline</span></div>
-    <div class="mn-item" id="mn-agenda" onclick="goTo('agenda')"><span class="mn-ico">📅</span><span class="mn-lbl">Agenda</span></div>
-    <div class="mn-item" id="mn-clients" onclick="goTo('clients')"><span class="mn-ico">👥</span><span class="mn-lbl">Clients</span></div>
-    <div class="mn-item" id="mn-mesures" onclick="goTo('mesures')"><span class="mn-ico">📐</span><span class="mn-lbl">Mesures</span></div>
-    <div class="mn-item" id="mn-taches" onclick="goTo('taches')"><span class="mn-ico">✅</span><span class="mn-lbl">Tâches</span></div>
-    <div class="mn-item" id="mn-achats" onclick="goTo('achats')"><span class="mn-ico">🛒</span><span class="mn-lbl">Achats</span></div>
+    <div class="mn-item on" id="mn-dashboard" onclick="goTo('dashboard')"><i class="ti ti-home mn-ico"></i><span class="mn-lbl">Accueil</span></div>
+    <div class="mn-item" id="mn-pipeline" onclick="goTo('pipeline')"><i class="ti ti-layout-kanban mn-ico"></i><span class="mn-lbl">Pipeline</span></div>
+    <div class="mn-item" id="mn-agenda" onclick="goTo('agenda')"><i class="ti ti-calendar mn-ico"></i><span class="mn-lbl">Agenda</span></div>
+    <div class="mn-item" id="mn-clients" onclick="goTo('clients')"><i class="ti ti-users mn-ico"></i><span class="mn-lbl">Clients</span></div>
+    <div class="mn-item" id="mn-mesures" onclick="goTo('mesures')"><i class="ti ti-ruler-measure mn-ico"></i><span class="mn-lbl">Mesures</span></div>
+    <div class="mn-item" id="mn-taches" onclick="goTo('taches')"><i class="ti ti-checkbox mn-ico"></i><span class="mn-lbl">Tâches</span></div>
+    <div class="mn-item" id="mn-achats" onclick="goTo('achats')"><i class="ti ti-shopping-cart mn-ico"></i><span class="mn-lbl">Achats</span></div>
   </div>
 </div>
 
@@ -901,24 +902,35 @@ function renderPipe(){
   document.getElementById('pipe').innerHTML=STATUTS.map(s=>{
     const items=af.filter(a=>a.statut===s.k);
     const ca=items.reduce((x,a)=>x+(parseFloat(a.mnt)||0),0);
+    const avColors=['#2563eb','#16a34a','#d97706','#dc2626','#7c3aed','#0891b2','#059669','#b45309'];
     const cards=items.length?items.map(a=>{const c=cls.find(x=>x.id===a.cid);const rs=rls(a.relance);
       const isLast=a.statut==='paye';
+      const nom=c?c.nom:(a.tit||'?');
+      const ini=nom.trim().split(/\s+/).slice(0,2).map(w=>w[0]?.toUpperCase()||'').join('');
+      const avColor=avColors[(nom.charCodeAt(0)||0)%avColors.length];
+      const tel=c?.tel||a.tel;
       return`<div class="ac ${a.urg?'urg':''}" draggable="true" data-id="${a.id}" ondragstart="pipeDragStart(event,'${a.id}')" ondragend="pipeDragEnd(event)">
         <div onclick="openAff('${a.id}')">
           ${a.urg?'<span class="ub">⚡ URG</span>':''}
-          <div class="cn">${c?c.nom:'?'}</div><div class="at">${a.tit}</div>
+          <div style="display:flex;align-items:flex-start;gap:7px;margin-bottom:6px">
+            <div style="width:28px;height:28px;border-radius:50%;background:${avColor};color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">${ini}</div>
+            <div style="flex:1;min-width:0">
+              <div class="cn">${nom}</div>
+              <div class="at" style="margin-bottom:0">${a.tit}</div>
+            </div>
+          </div>
           <div class="am"><span style="font-weight:600;color:var(--g700)">${a.mnt?a.mnt+' €':'—'}</span><span class="db ${dCls(a.dom)}">${dLabel(a.dom)}</span></div>
           ${rs?`<div style="margin-top:4px"><span class="rt ${rs}">${rlLabel(a.relance)}</span></div>`:''}
-          ${a.devisNums?.length?`<div style="margin-top:4px;font-size:10px;color:var(--am);font-weight:600">📄 ${a.devisNums.join(' · ')}</div>`:''}
-          ${a.adr_chant?`<div style="margin-top:3px;font-size:10px;color:var(--g500)">📍 ${a.adr_chant}${a.code?' · 🔑 '+a.code:''}${a.etage?' · '+a.etage:''}</div>`:''}
-          ${a.tel?`<div style="margin-top:3px;font-size:10px;color:var(--g600)">📞 ${a.tel}</div>`:''}
-          ${a.email?`<div style="margin-top:2px;font-size:10px;color:var(--g600)">✉️ ${a.email}</div>`:''}
-          ${SIGNE_PLUS.includes(a.statut)&&a.dateInterv?`<div style="margin-top:4px;font-size:10px;color:var(--gr);font-weight:600">📅 ${fmtDate(a.dateInterv)}</div>`:SIGNE_PLUS.includes(a.statut)&&!a.dateInterv?`<div style="margin-top:5px"><button onclick="planifierInterv(event,'${a.id}')" style="width:100%;padding:5px 8px;border:1.5px dashed var(--am);border-radius:6px;background:var(--am-lt);color:var(--am);font-size:11px;font-weight:600;cursor:pointer">📅 Intervention à planifier</button></div>`:''}
+          ${a.devisNums?.length?`<div style="margin-top:4px;font-size:10px;color:var(--am);font-weight:600"><i class="ti ti-file-text" style="font-size:11px"></i> ${a.devisNums.join(' · ')}</div>`:''}
+          ${a.adr_chant?`<div style="margin-top:5px;font-size:10px;color:var(--g500);display:flex;align-items:flex-start;gap:3px"><i class="ti ti-map-pin" style="flex-shrink:0;font-size:11px;margin-top:1px"></i><span>${a.adr_chant}${a.code?' · '+a.code:''}${a.etage?' · '+a.etage:''}</span></div>`:''}
+          ${tel?`<div style="margin-top:3px;font-size:10px;color:var(--g600);display:flex;align-items:center;gap:3px"><i class="ti ti-phone" style="font-size:11px"></i><a href="tel:${tel}" onclick="event.stopPropagation()" style="color:inherit;text-decoration:none">${tel}</a></div>`:''}
+          ${a.email?`<div style="margin-top:2px;font-size:10px;color:var(--g600);display:flex;align-items:center;gap:3px"><i class="ti ti-mail" style="font-size:11px"></i><span>${a.email}</span></div>`:''}
+          ${SIGNE_PLUS.includes(a.statut)&&a.dateInterv?`<div style="margin-top:4px;font-size:10px;color:var(--gr);font-weight:600;display:flex;align-items:center;gap:3px"><i class="ti ti-calendar-check" style="font-size:11px"></i>${fmtDate(a.dateInterv)}</div>`:SIGNE_PLUS.includes(a.statut)&&!a.dateInterv?`<div style="margin-top:5px"><button onclick="planifierInterv(event,'${a.id}')" style="width:100%;padding:5px 8px;border:1.5px dashed var(--am);border-radius:6px;background:var(--am-lt);color:var(--am);font-size:11px;font-weight:600;cursor:pointer">📅 Intervention à planifier</button></div>`:''}
         </div>
         <div class="ac-actions">
-          ${(c?.tel||a.tel)?`<a href="tel:${c?.tel||a.tel}" onclick="event.stopPropagation()" class="btn-ico" title="Appeler">📞</a>`:''}
-          ${(c?.tel||a.tel)?`<button class="btn-wa" onclick="shareAffWA(event,'${a.id}')" title="Partager sur WhatsApp">💬 WA</button>`:''}
-          ${!isLast?`<button class="btn-ico btn-sm" onclick="advAffStatut(event,'${a.id}')" title="Avancer le statut" style="margin-left:auto">→</button>`:''}
+          ${tel?`<a href="tel:${tel}" onclick="event.stopPropagation()" class="btn-ico" title="Appeler"><i class="ti ti-phone" style="font-size:14px"></i></a>`:''}
+          <button class="btn-wa" onclick="shareAffWA(event,'${a.id}')" title="WhatsApp"><i class="ti ti-brand-whatsapp" style="font-size:14px"></i> WA</button>
+          ${!isLast?`<button class="btn-ico btn-sm" onclick="advAffStatut(event,'${a.id}')" title="Avancer le statut" style="margin-left:auto"><i class="ti ti-arrow-right" style="font-size:14px"></i></button>`:''}
         </div>
       </div>`;
     }).join(''):'<div style="text-align:center;padding:14px;color:var(--g400);font-size:11px">Vide</div>';
