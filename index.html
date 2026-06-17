@@ -493,7 +493,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="mb">
       <input type="hidden" id="a-id">
       <div class="fr">
-        <div class="fg"><label class="fl">Client *</label><select class="fs" id="a-cli"><option value="">Sélectionner...</option></select></div>
+        <div class="fg"><label class="fl">Client *</label><input class="fi" id="a-cli-txt" list="a-cli-list" placeholder="Nom du client (existant ou nouveau)" autocomplete="off"><datalist id="a-cli-list"></datalist><input type="hidden" id="a-cli"></div>
         <div class="fg"><label class="fl">Domaine *</label><select class="fs" id="a-dom"><option value="serrurerie">🔑 Serrurerie</option><option value="volets">🪟 Volets roulants</option></select></div>
       </div>
       <div class="fg"><label class="fl">Prestation *</label><input class="fi" id="a-tit" placeholder="Ex: Installation serrure 3 points, Remplacement moteur volet..."></div>
@@ -736,6 +736,9 @@ function pushLocalToFirestore(){
   FS_COLS.forEach(col=>{const v=load(col);if(v.length>0)fsSave(col,v);});
 }
 
+// Gérer le résultat du redirect (iOS Safari)
+auth.getRedirectResult().catch(()=>{});
+
 auth.onAuthStateChanged(user=>{
   const ls=document.getElementById('login-screen');
   const logout=document.getElementById('btn-logout');
@@ -761,8 +764,14 @@ function doLogin(){
   const err=document.getElementById('login-err');
   err.textContent='';
   const provider=new firebase.auth.GoogleAuthProvider();
-  auth.signInWithPopup(provider)
-    .catch(e=>{err.textContent='Erreur : '+e.message;});
+  // Sur iOS Safari, le popup peut être bloqué → on bascule sur redirect
+  auth.signInWithPopup(provider).catch(e=>{
+    if(e.code==='auth/popup-blocked'||e.code==='auth/popup-closed-by-user'||e.code==='auth/cancelled-popup-request'){
+      auth.signInWithRedirect(provider);
+    } else {
+      err.textContent='Erreur : '+e.message;
+    }
+  });
 }
 
 function doLogout(){if(confirm('Se déconnecter ?'))auth.signOut();}
@@ -874,7 +883,7 @@ function renderPipe(){
           <div class="am"><span style="font-weight:600;color:var(--g700)">${a.mnt?a.mnt+' €':'—'}</span><span class="db ${dCls(a.dom)}">${dLabel(a.dom)}</span></div>
           ${rs?`<div style="margin-top:4px"><span class="rt ${rs}">${rlLabel(a.relance)}</span></div>`:''}
           ${a.devisNums?.length?`<div style="margin-top:4px;font-size:10px;color:var(--am);font-weight:600">📄 ${a.devisNums.join(' · ')}</div>`:''}
-          ${SIGNE_PLUS.includes(a.statut)&&a.dateInterv?`<div style="margin-top:4px;font-size:10px;color:var(--gr);font-weight:600">📅 ${fmtDate(a.dateInterv)}</div>`:''}
+          ${SIGNE_PLUS.includes(a.statut)&&a.dateInterv?`<div style="margin-top:4px;font-size:10px;color:var(--gr);font-weight:600">📅 ${fmtDate(a.dateInterv)}</div>`:SIGNE_PLUS.includes(a.statut)&&!a.dateInterv?`<div style="margin-top:5px"><button onclick="planifierInterv(event,'${a.id}')" style="width:100%;padding:5px 8px;border:1.5px dashed var(--am);border-radius:6px;background:var(--am-lt);color:var(--am);font-size:11px;font-weight:600;cursor:pointer">📅 Intervention à planifier</button></div>`:''}
         </div>
         <div class="ac-actions">
           ${c?.tel?`<a href="tel:${c.tel}" onclick="event.stopPropagation()" class="btn-ico" title="Appeler">📞</a>`:''}
@@ -1231,17 +1240,20 @@ function openCliDet(id){
 }
 function newAffForCli(){X('mo-cdet');openAff(null,curCliId);}
 function openAffInStatut(statut){openAff();setTimeout(()=>{document.getElementById('a-sta').value=statut;toggleChantier();},50);}
+function planifierInterv(ev,id){ev.stopPropagation();openAff(id);setTimeout(()=>{const f=document.getElementById('a-date-interv');if(f){f.scrollIntoView({behavior:'smooth',block:'center'});f.focus();}},200);}
 
 // AFFAIRE
 function openAff(id,prefill){
   const cls=clients(),af=affaires();
-  const sel=document.getElementById('a-cli');
-  sel.innerHTML='<option value="">Sélectionner...</option>'+cls.map(c=>`<option value="${c.id}">${c.nom}${c.tel?' — '+c.tel:''}</option>`).join('');
+  const dl=document.getElementById('a-cli-list');
+  dl.innerHTML=cls.map(c=>`<option value="${c.nom}${c.tel?' — '+c.tel:''}" data-id="${c.id}">`).join('');
   document.getElementById('ma-title').textContent=id?'Modifier l\'affaire':'Nouvelle affaire';
   document.getElementById('btn-del-a').style.display=id?'inline-flex':'none';
   document.getElementById('a-id').value=id||'';
   const a=id?af.find(x=>x.id===id):null;
-  document.getElementById('a-cli').value=a?.cid||prefill||'';
+  const cliObj=a?.cid?cls.find(x=>x.id===a.cid):prefill?cls.find(x=>x.id===prefill):null;
+  document.getElementById('a-cli-txt').value=cliObj?cliObj.nom:'';
+  document.getElementById('a-cli').value=cliObj?.id||'';
   document.getElementById('a-dom').value=a?.dom||'serrurerie';
   document.getElementById('a-tit').value=a?.tit||'';
   document.getElementById('a-mnt').value=a?.mnt||'';
@@ -1261,9 +1273,22 @@ function openAff(id,prefill){
   open_('mo-aff');
 }
 function saveAff(){
-  const cid=vl('a-cli'),tit=vl('a-tit');
-  if(!cid){toast('⚠ Sélectionner un client');return;}
+  const tit=vl('a-tit');
   if(!tit){toast('⚠ Prestation obligatoire');return;}
+  const cliTxt=document.getElementById('a-cli-txt').value.trim();
+  if(!cliTxt){toast('⚠ Nom du client obligatoire');return;}
+  // Résoudre ou créer le client
+  let cid=document.getElementById('a-cli').value;
+  const cls=clients();
+  // Chercher par nom exact
+  let cliMatch=cls.find(c=>cliTxt.startsWith(c.nom));
+  if(cliMatch){cid=cliMatch.id;}
+  else if(!cid){
+    // Créer nouveau client à la volée
+    const newCli={id:uid(),nom:cliTxt,tel:'',email:'',adr:'',not:'',createdAt:today()};
+    const updCls=[...cls,newCli]; save('clients',updCls);
+    cid=newCli.id; toast('Client "'+cliTxt+'" créé automatiquement');
+  }
   const af=affaires(); const id=vl('a-id');
   const d={cid,dom:vl('a-dom'),tit,mnt:vl('a-mnt'),statut:vl('a-sta'),relance:vl('a-rel'),not:vl('a-not'),urg:document.getElementById('a-urg').checked,
     adr_chant:vl('a-adr'),code:vl('a-code'),etage:vl('a-etage'),dateInterv:vl('a-date-interv'),devisNums:getDevisNums()};
