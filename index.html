@@ -534,7 +534,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div class="fg"><label class="fl">Étage / accès</label><input class="fi" id="a-etage" placeholder="Ex: 3e droite"></div>
         </div>
         <div class="fr">
-          <div class="fg"><label class="fl">Téléphone</label><input class="fi" id="a-tel" type="tel" placeholder="Ex: 06 12 34 56 78"></div>
+          <div class="fg"><label class="fl">Téléphone</label><div style="display:flex;gap:6px"><input class="fi" id="a-tel" type="tel" placeholder="Ex: 06 12 34 56 78"><a id="a-tel-btn" href="#" onclick="event.preventDefault();const t=document.getElementById('a-tel').value;if(t)window.location='tel:'+t;" class="btn btn-g btn-sm" style="white-space:nowrap;text-decoration:none">📞 Appeler</a></div></div>
           <div class="fg"><label class="fl">Email</label><input class="fi" id="a-email" type="email" placeholder="Ex: client@mail.com"></div>
         </div>
       </div>
@@ -615,7 +615,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <div class="fg"><label class="fl">Étage / accès</label><input class="fi" id="e-etage" placeholder="Ex: 3e droite"></div>
         </div>
         <div class="fr">
-          <div class="fg"><label class="fl">Téléphone</label><input class="fi" id="e-tel" type="tel" placeholder="Ex: 06 12 34 56 78"></div>
+          <div class="fg"><label class="fl">Téléphone</label><div style="display:flex;gap:6px"><input class="fi" id="e-tel" type="tel" placeholder="Ex: 06 12 34 56 78"><a href="#" onclick="event.preventDefault();const t=document.getElementById('e-tel').value;if(t)window.location='tel:'+t;" class="btn btn-g btn-sm" style="white-space:nowrap;text-decoration:none">📞 Appeler</a></div></div>
           <div class="fg"><label class="fl">Email</label><input class="fi" id="e-email" type="email" placeholder="Ex: client@mail.com"></div>
         </div>
       </div>
