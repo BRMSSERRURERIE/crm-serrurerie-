@@ -266,14 +266,37 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--g400);display:inline-block;margin-right:5px;transition:.3s}
 .sync-dot.ok{background:var(--gr)}.sync-dot.err{background:var(--rd)}.sync-dot.sync{background:var(--am)}
 
+/* MOBILE BOTTOM NAV */
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid var(--g200);z-index:50;padding:4px 0 env(safe-area-inset-bottom,4px)}
+.mob-nav-inner{display:flex;justify-content:space-around;align-items:center}
+.mn-item{display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 8px;border-radius:8px;cursor:pointer;flex:1;min-width:0;transition:.15s;position:relative}
+.mn-item .mn-ico{font-size:20px;line-height:1}
+.mn-item .mn-lbl{font-size:9px;font-weight:600;color:var(--g500);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
+.mn-item.on .mn-ico{transform:scale(1.1)}
+.mn-item.on .mn-lbl{color:var(--bl)}
+.mn-item .mn-badge{position:absolute;top:2px;right:calc(50% - 14px);background:var(--rd);color:#fff;font-size:9px;font-weight:700;padding:1px 4px;border-radius:8px;min-width:14px;text-align:center;line-height:1.4}
+
 @media(max-width:720px){
-  .sb{width:48px}
-  .sb-name,.sb-sub,.ni span:not(.ico):not(.badge){display:none}
-  .sb-logo{padding:10px;justify-content:center}
-  .sb-icon{width:28px;height:28px;font-size:14px}
-  .ni{padding:9px;justify-content:center}
-  .sg{grid-template-columns:repeat(2,1fr)}
-  .week-grid{grid-template-columns:repeat(4,1fr)}
+  .sb{display:none}
+  .mob-nav{display:block}
+  body{overflow:auto}
+  .main{padding-bottom:calc(60px + env(safe-area-inset-bottom,0px))}
+  .page{padding:10px}
+  .topbar{padding:0 12px;height:48px}
+  .topbar h1{font-size:14px}
+  .sg{grid-template-columns:repeat(2,1fr);gap:8px}
+  .week-grid{grid-template-columns:repeat(3,1fr)}
+  .pcol{flex:0 0 180px}
+  .fr,.fr3{grid-template-columns:1fr}
+  .mo{padding:0;align-items:flex-end}
+  .md{border-radius:16px 16px 0 0;max-height:92vh;max-width:100%}
+  .toast{bottom:72px}
+  .ph{flex-direction:column;gap:8px}
+  .ph-right{width:100%;justify-content:flex-end}
+  .cg{grid-template-columns:1fr}
+  .pipe-add{font-size:13px;padding:8px}
+  .ac-actions{gap:6px}
+  .btn-wa{padding:6px 10px;font-size:13px}
 }
 </style>
 </head>
@@ -311,6 +334,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="ni" id="ni-clients" onclick="goTo('clients')"><span class="ico">👥</span><span>Clients</span></div>
     <div class="ni" id="ni-taches" onclick="goTo('taches')"><span class="ico">✅</span><span>Tâches</span></div>
   </nav>
+</div>
+
+<!-- MOBILE BOTTOM NAV -->
+<div class="mob-nav">
+  <div class="mob-nav-inner">
+    <div class="mn-item on" id="mn-dashboard" onclick="goTo('dashboard')"><span class="mn-ico">🏠</span><span class="mn-lbl">Accueil</span></div>
+    <div class="mn-item" id="mn-pipeline" onclick="goTo('pipeline')"><span class="mn-ico">📋</span><span class="mn-lbl">Pipeline</span></div>
+    <div class="mn-item" id="mn-agenda" onclick="goTo('agenda')"><span class="mn-ico">📅</span><span class="mn-lbl">Agenda</span></div>
+    <div class="mn-item" id="mn-clients" onclick="goTo('clients')"><span class="mn-ico">👥</span><span class="mn-lbl">Clients</span></div>
+    <div class="mn-item" id="mn-mesures" onclick="goTo('mesures')"><span class="mn-ico">📐</span><span class="mn-lbl">Mesures</span></div>
+    <div class="mn-item" id="mn-taches" onclick="goTo('taches')"><span class="mn-ico">✅</span><span class="mn-lbl">Tâches</span></div>
+    <div class="mn-item" id="mn-achats" onclick="goTo('achats')"><span class="mn-ico">🛒</span><span class="mn-lbl">Achats</span></div>
+  </div>
 </div>
 
 <!-- MAIN -->
@@ -767,7 +803,7 @@ const TITLES={dashboard:'Tableau de bord',pipeline:'Pipeline commercial',agenda:
 let curPage='dashboard';
 function goTo(p){
   curPage=p;
-  PAGES.forEach(x=>{document.getElementById('pg-'+x).classList.toggle('on',x===p);document.getElementById('ni-'+x).classList.toggle('on',x===p)});
+  PAGES.forEach(x=>{document.getElementById('pg-'+x).classList.toggle('on',x===p);document.getElementById('ni-'+x).classList.toggle('on',x===p);const mn=document.getElementById('mn-'+x);if(mn)mn.classList.toggle('on',x===p);});
   document.getElementById('ptitle').textContent=TITLES[p];
   render(p);
 }
