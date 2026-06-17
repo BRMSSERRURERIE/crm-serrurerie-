@@ -249,6 +249,11 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .srch{display:flex;align-items:center;gap:6px;background:var(--g100);border:1px solid var(--g200);border-radius:var(--r);padding:6px 10px;width:190px}
 .srch input{border:none;background:transparent;outline:none;font-size:13px;color:var(--g800);width:100%;font-family:inherit}
 
+/* MOBILE: éviter le zoom auto iPhone au focus (champs < 16px) */
+@media (max-width:768px){
+  .fi,.fs,.fta,.srch input,input,select,textarea{font-size:16px}
+}
+
 /* EMPTY */
 .empty{text-align:center;padding:30px 16px}
 .empty-ico{font-size:34px;margin-bottom:7px}
