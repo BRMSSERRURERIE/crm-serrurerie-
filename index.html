@@ -607,7 +607,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div class="fg"><label class="fl">Heure fin</label><input class="fi" id="e-hfin" type="time" value="10:00"></div>
       </div>
       <div class="fg"><label class="fl">Client</label><select class="fs" id="e-cli"><option value="">Aucun</option></select></div>
-      <div class="fg"><label class="fl">Adresse / Code / Étage</label><input class="fi" id="e-adr" placeholder="12 rue de la Paix — Code 1234A — 3e droite"></div>
+      <div style="background:var(--bl-lt);border:1px solid #bfdbfe;border-radius:var(--r);padding:12px;margin-bottom:12px">
+        <div style="font-size:11px;font-weight:700;color:var(--bl);margin-bottom:8px">📍 Adresse & contact</div>
+        <div class="fg"><label class="fl">Adresse</label><input class="fi" id="e-adr" placeholder="Ex: 12 rue de la Paix, Paris 75001"></div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Code accès</label><input class="fi" id="e-code" placeholder="Ex: 1234A"></div>
+          <div class="fg"><label class="fl">Étage / accès</label><input class="fi" id="e-etage" placeholder="Ex: 3e droite"></div>
+        </div>
+        <div class="fr">
+          <div class="fg"><label class="fl">Téléphone</label><input class="fi" id="e-tel" type="tel" placeholder="Ex: 06 12 34 56 78"></div>
+          <div class="fg"><label class="fl">Email</label><input class="fi" id="e-email" type="email" placeholder="Ex: client@mail.com"></div>
+        </div>
+      </div>
       <div class="fg"><label class="fl">Notes</label><textarea class="fta" id="e-not" placeholder="Infos pratiques..."></textarea></div>
     </div>
     <div class="mf">
@@ -1334,13 +1345,17 @@ function openEvt(id,prefillDate){
   document.getElementById('e-hfin').value=e?.hfin||'10:00';
   document.getElementById('e-cli').value=e?.cid||'';
   document.getElementById('e-adr').value=e?.adr||'';
+  document.getElementById('e-code').value=e?.code||'';
+  document.getElementById('e-etage').value=e?.etage||'';
+  document.getElementById('e-tel').value=e?.tel||'';
+  document.getElementById('e-email').value=e?.email||'';
   document.getElementById('e-not').value=e?.not||'';
   open_('mo-evt');
 }
 function saveEvt(){
   const tit=vl('e-tit'),date=vl('e-date'); if(!tit){toast('⚠ Titre obligatoire');return;} if(!date){toast('⚠ Date obligatoire');return;}
   const ev=events(); const id=vl('e-id');
-  const d={tit,dom:vl('e-dom'),date,hdeb:vl('e-hdeb'),hfin:vl('e-hfin'),cid:vl('e-cli'),adr:vl('e-adr'),not:vl('e-not')};
+  const d={tit,dom:vl('e-dom'),date,hdeb:vl('e-hdeb'),hfin:vl('e-hfin'),cid:vl('e-cli'),adr:vl('e-adr'),code:vl('e-code'),etage:vl('e-etage'),tel:vl('e-tel'),email:vl('e-email'),not:vl('e-not')};
   if(id){const i=ev.findIndex(x=>x.id===id);if(i>=0)Object.assign(ev[i],d);}
   else ev.push({id:uid(),createdAt:today(),...d});
   save('events',ev); X('mo-evt'); render(curPage); toast(id?'Intervention mise à jour ✓':'Intervention ajoutée ✓');
