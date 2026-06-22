@@ -375,6 +375,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="card"><div class="ch"><span class="ct">🔔 Relances</span><button class="btn btn-s btn-sm" onclick="goTo('pipeline')">Pipeline →</button></div><div class="cb" id="dash-rel"></div></div>
       <div class="card"><div class="ch"><span class="ct">🛒 Achats à commander</span><button class="btn btn-s btn-sm" onclick="goTo('achats')">Achats →</button></div><div class="cb" id="dash-ach"></div></div>
       <div class="card"><div class="ch"><span class="ct">✅ Tâches urgentes</span><button class="btn btn-s btn-sm" onclick="goTo('taches')">Tâches →</button></div><div class="cb" id="dash-tsk"></div></div>
+      <div class="card" style="grid-column:1/-1"><div class="ch"><span class="ct">📅 Interventions à planifier</span><button class="btn btn-s btn-sm" onclick="goTo('pipeline')">Pipeline →</button></div><div class="cb" id="dash-interv"></div></div>
     </div>
   </div>
 
@@ -862,10 +863,11 @@ function renderDash(){
   const rel=af.filter(a=>a.relance&&a.relance<=t&&a.statut!=='paye');
   const ca=af.filter(a=>['signe','en_cours'].includes(a.statut)).reduce((s,a)=>s+(parseFloat(a.mnt)||0),0);
   const aCmd=ac.filter(a=>a.statut==='a_commander');
+  const aInterv=af.filter(a=>SIGNE_PLUS.includes(a.statut)&&!a.dateInterv&&a.statut!=='paye');
   document.getElementById('sg').innerHTML=`
     <div class="sc ${rel.length?'red':''}"><div class="sl">Relances</div><div class="sv">${rel.length}</div><div class="ss">${rel.length===0?'Tout à jour ✓':'à contacter'}</div></div>
     <div class="sc amb"><div class="sl">Affaires actives</div><div class="sv">${active.length}</div><div class="ss">en cours</div></div>
-    <div class="sc ${aCmd.length?'ora':''}"><div class="sl">Achats à commander</div><div class="sv">${aCmd.length}</div><div class="ss">${aCmd.length===0?'Rien':'articles'}</div></div>
+    <div class="sc ${aInterv.length?'amb':''}"><div class="sl">Interv. à planifier</div><div class="sv">${aInterv.length}</div><div class="ss">${aInterv.length===0?'Tout planifié ✓':'en attente'}</div></div>
     <div class="sc grn"><div class="sl">CA signé en cours</div><div class="sv">${ca.toFixed(0)} €</div><div class="ss">interventions signées</div></div>
   `;
   const todayEv=ev.filter(e=>e.date===t).sort((a,b)=>(a.hdeb||'').localeCompare(b.hdeb||''));
@@ -893,6 +895,28 @@ function renderDash(){
     urg.slice(0,4).map(x=>`<div class="ti ${x.done?'done':''}" style="margin-bottom:5px">
       <div class="chk ${x.done?'ok':''}" onclick="toggleTsk('${x.id}')">${x.done?'✓':''}</div>
       <div style="flex:1"><div class="ttitle">${x.tit}</div><div class="tmeta"><span class="pb ${x.pri}">${x.pri}</span>${x.ech&&x.ech<today()?'<span class="late">⚠ En retard</span>':x.ech===today()?'<span class="tod">Aujourd\'hui</span>':''}</div></div></div>`).join('');
+  const di=document.getElementById('dash-interv');
+  const aInterv=af.filter(a=>SIGNE_PLUS.includes(a.statut)&&!a.dateInterv&&a.statut!=='paye');
+  di.innerHTML=!aInterv.length?'<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">Toutes les interventions sont planifiées</div></div>':
+    `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">`+aInterv.map(a=>{
+      const c=cls.find(x=>x.id===a.cid);
+      const nom=c?c.nom:(a.tit||'?');
+      const avColors=['#2563eb','#16a34a','#d97706','#dc2626','#7c3aed','#0891b2','#059669','#b45309'];
+      const avColor=avColors[(nom.charCodeAt(0)||0)%avColors.length];
+      const ini=nom.trim().split(/\s+/).slice(0,2).map(w=>w[0]?.toUpperCase()||'').join('');
+      const tel=c?.tel||a.tel;
+      return`<div style="display:flex;align-items:center;gap:9px;padding:9px 11px;background:var(--am-lt);border:1px solid #fde68a;border-radius:var(--r);cursor:pointer" onclick="planifierInterv(event,'${a.id}')">
+        <div style="width:32px;height:32px;border-radius:50%;background:${avColor};color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${ini}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;color:var(--g800)">${nom}</div>
+          <div style="font-size:11px;color:var(--g600);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${a.tit}</div>
+          ${a.adr_chant?`<div style="font-size:10px;color:var(--g500);margin-top:2px"><i class="ti ti-map-pin" style="font-size:10px"></i> ${a.adr_chant.slice(0,30)}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0">
+          ${tel?`<a href="tel:${tel}" onclick="event.stopPropagation()" class="btn-ico btn-sm" title="Appeler"><i class="ti ti-phone" style="font-size:13px"></i></a>`:''}
+          <span style="font-size:10px;color:var(--am);font-weight:700;white-space:nowrap">📅 Planifier</span>
+        </div>
+      </div>`}).join('')+'</div>';
 }
 
 // ── PIPELINE ──────────────────────────────────────────────────
