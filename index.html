@@ -896,7 +896,6 @@ function renderDash(){
       <div class="chk ${x.done?'ok':''}" onclick="toggleTsk('${x.id}')">${x.done?'✓':''}</div>
       <div style="flex:1"><div class="ttitle">${x.tit}</div><div class="tmeta"><span class="pb ${x.pri}">${x.pri}</span>${x.ech&&x.ech<today()?'<span class="late">⚠ En retard</span>':x.ech===today()?'<span class="tod">Aujourd\'hui</span>':''}</div></div></div>`).join('');
   const di=document.getElementById('dash-interv');
-  const aInterv=af.filter(a=>SIGNE_PLUS.includes(a.statut)&&!a.dateInterv&&a.statut!=='paye');
   di.innerHTML=!aInterv.length?'<div class="empty"><div class="empty-ico">✅</div><div class="empty-txt">Toutes les interventions sont planifiées</div></div>':
     `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px">`+aInterv.map(a=>{
       const c=cls.find(x=>x.id===a.cid);
