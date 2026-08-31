@@ -337,6 +337,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="ni" id="ni-pipeline" onclick="goTo('pipeline')"><i class="ti ti-layout-kanban ico"></i><span>Pipeline</span></div>
     <div class="ni" id="ni-agenda" onclick="goTo('agenda')"><i class="ti ti-calendar ico"></i><span>Agenda</span></div>
     <div class="ni" id="ni-achats" onclick="goTo('achats')"><i class="ti ti-shopping-cart ico"></i><span>Achats</span></div>
+    <div class="ni" id="ni-soustraitants" onclick="goTo('soustraitants')"><i class="ti ti-hammer ico"></i><span>Sous-traitants</span></div>
     <div class="ni" id="ni-mesures" onclick="goTo('mesures')"><i class="ti ti-ruler-measure ico"></i><span>Mesures</span></div>
     <div class="ni" id="ni-clients" onclick="goTo('clients')"><i class="ti ti-users ico"></i><span>Clients</span></div>
     <div class="ni" id="ni-taches" onclick="goTo('taches')"><i class="ti ti-checkbox ico"></i><span>Tâches</span></div>
@@ -353,6 +354,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="mn-item" id="mn-mesures" onclick="goTo('mesures')"><i class="ti ti-ruler-measure mn-ico"></i><span class="mn-lbl">Mesures</span></div>
     <div class="mn-item" id="mn-taches" onclick="goTo('taches')"><i class="ti ti-checkbox mn-ico"></i><span class="mn-lbl">Tâches</span></div>
     <div class="mn-item" id="mn-achats" onclick="goTo('achats')"><i class="ti ti-shopping-cart mn-ico"></i><span class="mn-lbl">Achats</span></div>
+    <div class="mn-item" id="mn-soustraitants" onclick="goTo('soustraitants')"><i class="ti ti-hammer mn-ico"></i><span class="mn-lbl">S-traitants</span></div>
   </div>
 </div>
 
@@ -432,6 +434,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:16px" id="ach-stats"></div>
     <div id="ach-list"></div>
+  </div>
+
+  <!-- SOUS-TRAITANTS -->
+  <div class="page" id="pg-soustraitants">
+    <div class="ph">
+      <div><div class="pt">Paiement sous-traitants</div><div class="ps" id="st-sub"></div></div>
+      <button class="btn btn-p" onclick="openSt()">+ Nouvelle intervention</button>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:16px" id="st-stats"></div>
+    <div class="dfilter" id="st-filter"></div>
+    <div id="st-list"></div>
   </div>
 
   <!-- MESURES -->
@@ -661,6 +674,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<!-- SOUS-TRAITANT -->
+<div class="mo" id="mo-st">
+  <div class="md">
+    <div class="mh"><span class="mt" id="mst-title">Nouvelle intervention</span><button class="mc" onclick="X('mo-st')">✕</button></div>
+    <div class="mb">
+      <input type="hidden" id="st-id">
+      <div class="fg"><label class="fl">Sous-traitant *</label><input class="fi" id="st-nom" placeholder="Ex: Dupont Serrurerie, SARL Martin..."></div>
+      <div class="fg"><label class="fl">Adresse du chantier</label><input class="fi" id="st-adr" placeholder="Ex: 12 rue de la Paix, 75002 Paris"></div>
+      <div class="fg"><label class="fl">Nature de l'intervention</label><textarea class="fta" id="st-nat" placeholder="Ex: Pose de 3 volets roulants, remplacement serrure 3 points..."></textarea></div>
+      <div class="fr">
+        <div class="fg"><label class="fl">Prix de l'intervention (€) *</label><input class="fi" id="st-prix" type="number" min="0" step="0.01" placeholder="0.00"></div>
+        <div class="fg"><label class="fl">Date de l'intervention</label><input class="fi" id="st-date" type="date"></div>
+      </div>
+      <label class="fck"><input type="checkbox" id="st-paye"> ✅ Payé</label>
+    </div>
+    <div class="mf">
+      <button id="btn-del-st" class="btn btn-d btn-sm" onclick="delSt()" style="display:none;margin-right:auto">Supprimer</button>
+      <button class="btn btn-s" onclick="X('mo-st')">Annuler</button>
+      <button class="btn btn-p" onclick="saveSt()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
 <!-- MESURE FICHE -->
 <div class="mo" id="mo-mes">
   <div class="md wide">
@@ -717,7 +753,7 @@ firebase.initializeApp({
 const db=firebase.firestore();
 const auth=firebase.auth();
 let currentUser=null;
-const FS_COLS=['clients','affaires','taches','events','achats','mesures'];
+const FS_COLS=['clients','affaires','taches','events','achats','mesures','soustraitants'];
 
 function setSyncStatus(state){
   const dot=document.getElementById('sync-dot');
@@ -810,6 +846,7 @@ const load=k=>{try{return JSON.parse(localStorage.getItem('crm3_'+k)||'[]')}catc
 const save=(k,v)=>{localStorage.setItem('crm3_'+k,JSON.stringify(v));fsSave(k,v);};
 const clients=()=>load('clients'), affaires=()=>load('affaires'), taches=()=>load('taches');
 const events=()=>load('events'), achats=()=>load('achats'), mesures=()=>load('mesures');
+const soustraitants=()=>load('soustraitants');
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const today=()=>new Date().toISOString().split('T')[0];
 const vl=id=>document.getElementById(id).value.trim();
@@ -836,8 +873,8 @@ function setDF(s,v){
 }
 
 // ── NAV ───────────────────────────────────────────────────────
-const PAGES=['dashboard','pipeline','agenda','achats','mesures','clients','taches'];
-const TITLES={dashboard:'Tableau de bord',pipeline:'Pipeline commercial',agenda:'Agenda',achats:'Achats fournisseurs',mesures:'Prises de mesures',clients:'Clients',taches:'Tâches'};
+const PAGES=['dashboard','pipeline','agenda','achats','soustraitants','mesures','clients','taches'];
+const TITLES={dashboard:'Tableau de bord',pipeline:'Pipeline commercial',agenda:'Agenda',achats:'Achats fournisseurs',soustraitants:'Paiement sous-traitants',mesures:'Prises de mesures',clients:'Clients',taches:'Tâches'};
 let curPage='dashboard';
 function goTo(p){
   curPage=p;
@@ -850,6 +887,7 @@ function render(p){
   if(p==='pipeline')renderPipe();
   if(p==='agenda')renderAgenda();
   if(p==='achats')renderAchats();
+  if(p==='soustraitants')renderSoustraitants();
   if(p==='mesures')renderMesures();
   if(p==='clients')renderClients();
   if(p==='taches')renderTaches();
@@ -1064,6 +1102,86 @@ function renderAchats(){
 }
 function advAch(ev,id){ev.stopPropagation();const ac=achats();const i=ac.findIndex(x=>x.id===id);if(i<0)return;const next={a_commander:'commande',commande:'recu',recu:'recu'};ac[i].statut=next[ac[i].statut];save('achats',ac);render(curPage);toast(ac[i].statut==='commande'?'Commandé ✓':'Reçu ✓');}
 
+// ── SOUS-TRAITANTS ────────────────────────────────────────────
+const ST_MOIS=['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+const stKey=s=>(s.date||s.createdAt||'').slice(0,7); // "YYYY-MM"
+const stMoisLabel=k=>{if(!k)return'Sans date';const[y,m]=k.split('-');return`${ST_MOIS[parseInt(m,10)-1]} ${y}`;};
+const eur=n=>(Math.round(n*100)/100).toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:2})+' €';
+
+let stFilter='all'; // 'all' ou nom d'un sous-traitant
+function setStFilter(v){stFilter=v;renderSoustraitants();}
+function renderSoustraitants(){
+  const all=soustraitants().slice().sort((a,b)=>(b.date||b.createdAt||'').localeCompare(a.date||a.createdAt||''));
+  // Récap par sous-traitant (sur toutes les interventions) → filtre cliquable
+  const noms=[...new Set(all.map(s=>s.nom||'—'))].sort((a,b)=>a.localeCompare(b,'fr'));
+  if(stFilter!=='all'&&!noms.includes(stFilter))stFilter='all';
+  const duBy=n=>all.filter(s=>(s.nom||'—')===n&&!s.paye).reduce((t,s)=>t+(parseFloat(s.prix)||0),0);
+  const fb=document.getElementById('st-filter');
+  fb.innerHTML=`<div class="dfbtn all ${stFilter==='all'?'on':''}" onclick="setStFilter('all')">Tous (${all.length})</div>`+
+    noms.map(n=>{const d=duBy(n);return`<div class="dfbtn ${stFilter===n?'on':''}" style="${stFilter===n?'background:var(--g800);color:#fff':''}" onclick="setStFilter('${n.replace(/'/g,"\\'")}')">${n}${d?` · ${eur(d)} dû`:''}</div>`;}).join('');
+  fb.style.display=noms.length>1?'flex':'none';
+  // Liste filtrée
+  const st=stFilter==='all'?all:all.filter(s=>(s.nom||'—')===stFilter);
+  const curM=today().slice(0,7);
+  const totDu=st.filter(s=>!s.paye).reduce((t,s)=>t+(parseFloat(s.prix)||0),0);
+  const duMois=st.filter(s=>!s.paye&&stKey(s)===curM).reduce((t,s)=>t+(parseFloat(s.prix)||0),0);
+  const payeMois=st.filter(s=>s.paye&&stKey(s)===curM).reduce((t,s)=>t+(parseFloat(s.prix)||0),0);
+  document.getElementById('st-sub').textContent=(stFilter==='all'?'':stFilter+' — ')+st.length+' intervention'+(st.length!==1?'s':'');
+  document.getElementById('st-stats').innerHTML=`
+    <div class="sc ${totDu?'red':'grn'}"><div class="sl">Total dû</div><div class="sv">${eur(totDu)}</div><div class="ss">${st.filter(s=>!s.paye).length} non payée${st.filter(s=>!s.paye).length!==1?'s':''}</div></div>
+    <div class="sc amb"><div class="sl">Dû ce mois-ci</div><div class="sv">${eur(duMois)}</div><div class="ss">${stMoisLabel(curM)}</div></div>
+    <div class="sc grn"><div class="sl">Payé ce mois-ci</div><div class="sv">${eur(payeMois)}</div><div class="ss">${stMoisLabel(curM)}</div></div>
+  `;
+  const list=document.getElementById('st-list');
+  if(!st.length){list.innerHTML='<div class="empty"><div class="empty-ico">🔨</div><div class="empty-txt">Aucune intervention enregistrée.</div></div>';return;}
+  const groups=[...new Set(st.map(stKey))]; // déjà triées desc
+  list.innerHTML=groups.map(k=>{
+    const items=st.filter(s=>stKey(s)===k);
+    const mDu=items.filter(s=>!s.paye).reduce((t,s)=>t+(parseFloat(s.prix)||0),0);
+    const mTot=items.reduce((t,s)=>t+(parseFloat(s.prix)||0),0);
+    return`<div class="stitle" style="display:flex;justify-content:space-between;align-items:baseline">
+      <span>${stMoisLabel(k)} (${items.length})</span>
+      <span style="text-transform:none;letter-spacing:0">Total ${eur(mTot)} · <span style="color:${mDu?'var(--rd)':'var(--gr)'}">${mDu?'reste '+eur(mDu):'tout payé ✓'}</span></span>
+    </div>${items.map(s=>`
+      <div class="ach-item" onclick="openSt('${s.id}')">
+        <div class="ach-main">
+          <div class="ach-art">${s.nom||'—'}</div>
+          <div class="ach-meta">
+            ${s.adr?`<span>📍 ${s.adr}</span>`:''}
+            ${s.nat?`<span>🔧 ${s.nat}</span>`:''}
+            ${s.date?`<span>📅 ${fmtDate(s.date)}</span>`:''}
+            <span style="font-weight:700">${eur(parseFloat(s.prix)||0)}</span>
+          </div>
+        </div>
+        <span class="ach-stat ${s.paye?'recu':'a_commander'}" onclick="toggleStPaye(event,'${s.id}')">${s.paye?'✓ Payé':'À payer'}</span>
+      </div>`).join('')}`;
+  }).join('');
+}
+function toggleStPaye(ev,id){ev.stopPropagation();const st=soustraitants();const i=st.findIndex(x=>x.id===id);if(i<0)return;st[i].paye=!st[i].paye;save('soustraitants',st);render(curPage);toast(st[i].paye?'Marqué payé ✓':'Marqué à payer');}
+function openSt(id){
+  document.getElementById('mst-title').textContent=id?'Modifier l\'intervention':'Nouvelle intervention';
+  document.getElementById('btn-del-st').style.display=id?'inline-flex':'none';
+  document.getElementById('st-id').value=id||'';
+  const s=id?soustraitants().find(x=>x.id===id):null;
+  document.getElementById('st-nom').value=s?.nom||'';
+  document.getElementById('st-adr').value=s?.adr||'';
+  document.getElementById('st-nat').value=s?.nat||'';
+  document.getElementById('st-prix').value=s?.prix||'';
+  document.getElementById('st-date').value=s?.date||today();
+  document.getElementById('st-paye').checked=s?.paye||false;
+  open_('mo-st');
+}
+function saveSt(){
+  const nom=vl('st-nom'); if(!nom){toast('⚠ Sous-traitant obligatoire');return;}
+  const prix=vl('st-prix'); if(!prix){toast('⚠ Prix obligatoire');return;}
+  const st=soustraitants(); const id=vl('st-id');
+  const d={nom,adr:vl('st-adr'),nat:vl('st-nat'),prix,date:vl('st-date'),paye:document.getElementById('st-paye').checked};
+  if(id){const i=st.findIndex(x=>x.id===id);if(i>=0)Object.assign(st[i],d);}
+  else st.push({id:uid(),createdAt:today(),...d});
+  save('soustraitants',st); X('mo-st'); render(curPage); toast(id?'Intervention mise à jour ✓':'Intervention ajoutée ✓');
+}
+function delSt(){const id=vl('st-id');if(!id)return;save('soustraitants',soustraitants().filter(x=>x.id!==id));X('mo-st');render(curPage);toast('Intervention supprimée');}
+
 // ── MESURES ───────────────────────────────────────────────────
 let mesPhotos=[];
 function renderMesures(){
@@ -1210,6 +1328,7 @@ function updateBadges(){
   setBadge('ni-pipeline',affaires().filter(a=>a.relance&&a.relance<=t&&a.statut!=='paye').length);
   setBadge('ni-taches',taches().filter(x=>!x.done&&x.ech&&x.ech<=t).length);
   setBadge('ni-achats',achats().filter(a=>a.statut==='a_commander').length);
+  setBadge('ni-soustraitants',soustraitants().filter(s=>!s.paye).length);
   setBadge('ni-agenda',events().filter(e=>e.date===t).length);
 }
 function setBadge(ni,n){const el=document.getElementById(ni);el.querySelector('.badge')?.remove();if(n>0)el.insertAdjacentHTML('beforeend',`<span class="badge">${n}</span>`);}
