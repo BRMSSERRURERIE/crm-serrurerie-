@@ -183,7 +183,7 @@ async function submitEnvoi(){
     window.scrollTo(0,0);
   }catch(e){
     console.error(e);
-    showErr('Échec de l\'envoi. Vérifiez votre connexion et réessayez.');
+    const er=document.getElementById('err');er.textContent='Échec : '+(e.code||'')+' — '+(e.message||e);er.style.display='block';
     btn.disabled=false;btn.textContent='Envoyer';
     document.getElementById('prog').style.display='none';
   }
