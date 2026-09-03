@@ -188,7 +188,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ach-stat.a_commander{background:#fee2e2;color:var(--rd)}
 .ach-stat.commande{background:#fef3c7;color:var(--am)}
 .ach-stat.recu{background:#dcfce7;color:var(--gr)}
-.st-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.st-item{flex-wrap:wrap}
+.st-item .ach-main{min-width:150px}
+.st-right{display:flex;align-items:center;gap:10px;flex-shrink:0;margin-left:auto}
 .st-prix-edit{display:inline-flex;align-items:center;gap:3px;font-weight:700;color:var(--g700);font-size:13px;cursor:text}
 .st-prix-edit input{width:70px;padding:7px 8px;border:1px solid var(--g300);border-radius:6px;font-size:14px;font-weight:700;text-align:right;color:var(--g900);background:#fff;-moz-appearance:textfield}
 .st-prix-edit input::-webkit-outer-spin-button,.st-prix-edit input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
@@ -826,6 +828,9 @@ function fsSave(k,v){
 
 let fsListeners=[];
 const colLoaded={}; // suit quelles collections ont reçu leur 1er snapshot (sécurité anti-écrasement)
+// Ne pas redessiner si l'utilisateur est en train de saisir (sinon on lui vole le focus)
+const isTyping=()=>{const a=document.activeElement;return a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.tagName==='SELECT');};
+function renderLive(){if(document.getElementById('login-screen').style.display==='none'&&!isTyping())render(curPage);}
 function setupListeners(){
   fsListeners.forEach(u=>u());
   fsListeners=[];
@@ -845,7 +850,7 @@ function setupListeners(){
         }
       }
       if(col==='soustraitants'){maybeSyncEnvois();refreshSoldes();}
-      if(document.getElementById('login-screen').style.display==='none')render(curPage);
+      renderLive();
     },err=>setSyncStatus('err'));
     fsListeners.push(unsub);
   });
@@ -854,7 +859,7 @@ function setupListeners(){
     colLoaded.soldes=true;
     localStorage.setItem('crm3_soldes',JSON.stringify(snap.docs.map(d=>({id:d.id,...d.data()}))));
     refreshSoldes();
-    if(document.getElementById('login-screen').style.display==='none'&&curPage==='soustraitants')renderSoustraitants();
+    if(curPage==='soustraitants'&&!isTyping())renderLive();
   },err=>{/* règles pas encore prêtes : ignoré */});
   fsListeners.push(unsubSld);
   // Collection partagée "envois" (déposée par les sous-traitants via envoi.html)
@@ -863,7 +868,7 @@ function setupListeners(){
     const items=snap.docs.map(d=>({id:d.id,...d.data()}));
     localStorage.setItem('crm3_envois',JSON.stringify(items));
     maybeSyncEnvois();
-    if(document.getElementById('login-screen').style.display==='none')render(curPage);
+    renderLive();
   },err=>{/* index/permissions pas encore prêts : on ignore silencieusement */});
   fsListeners.push(unsubEnv);
 }
@@ -1224,7 +1229,7 @@ function renderSoustraitants(){
       <span>${stMoisLabel(k)} (${items.length})</span>
       <span style="text-transform:none;letter-spacing:0">Total ${eur(mTot)} · <span style="color:${mDu?'var(--rd)':'var(--gr)'}">${mDu?'reste '+eur(mDu):'tout payé ✓'}</span></span>
     </div>${items.map(s=>`
-      <div class="ach-item" onclick="openSt('${s.id}')">
+      <div class="ach-item st-item">
         <div class="ach-main">
           <div class="ach-art">${s.nom||'—'}</div>
           <div class="ach-meta">
@@ -1235,7 +1240,7 @@ function renderSoustraitants(){
         </div>
         <div class="st-right" onclick="event.stopPropagation()">
           <label class="st-prix-edit" title="Cliquez pour saisir le montant">
-            <input type="number" inputmode="decimal" step="0.01" min="0" placeholder="0" value="${s.prix!==''&&s.prix!=null?s.prix:''}" onchange="setStPrix('${s.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()"> €
+            <input type="text" inputmode="decimal" placeholder="0" value="${s.prix!==''&&s.prix!=null?s.prix:''}" onchange="setStPrix('${s.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()"> €
           </label>
           <span class="ach-stat ${s.paye?'recu':'a_commander'}" onclick="toggleStPaye(event,'${s.id}')">${s.paye?'✓ Payé':'À payer'}</span>
           <button class="st-edit" title="Modifier la fiche" onclick="openSt('${s.id}')"><i class="ti ti-pencil"></i> Modifier</button>
@@ -1246,7 +1251,8 @@ function renderSoustraitants(){
 function toggleStPaye(ev,id){ev.stopPropagation();const st=soustraitants();const i=st.findIndex(x=>x.id===id);if(i<0)return;st[i].paye=!st[i].paye;save('soustraitants',st);render(curPage);toast(st[i].paye?'Marqué payé ✓':'Marqué à payer');}
 function setStPrix(id,val){
   const st=soustraitants();const i=st.findIndex(x=>x.id===id);if(i<0)return;
-  const clean=(val===''||val==null)?'':String(parseFloat(val)||0);
+  const num=(val||'').toString().replace(',','.').replace(/[^0-9.]/g,'');
+  const clean=(num==='')?'':String(parseFloat(num)||0);
   if(st[i].prix===clean)return; // rien changé
   st[i].prix=clean;
   save('soustraitants',st);render(curPage);
