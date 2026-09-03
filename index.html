@@ -1273,7 +1273,8 @@ function openSt(id){
 }
 function saveSt(){
   const nom=vl('st-nom'); if(!nom){toast('⚠ Sous-traitant obligatoire');return;}
-  const prix=vl('st-prix'); if(!prix){toast('⚠ Prix obligatoire');return;}
+  const rawPrix=vl('st-prix').replace(',','.').replace(/[^0-9.]/g,'');
+  const prix=rawPrix===''?'':String(parseFloat(rawPrix)||0); // prix optionnel
   const st=soustraitants(); const id=vl('st-id');
   const d={nom,adr:vl('st-adr'),nat:vl('st-nat'),prix,date:vl('st-date'),paye:document.getElementById('st-paye').checked};
   if(id){const i=st.findIndex(x=>x.id===id);if(i>=0)Object.assign(st[i],d);}
