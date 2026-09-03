@@ -9,6 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.8.0/dist/tabler-icons.min.css">
 <style>
 :root{color-scheme:light;
@@ -188,6 +189,26 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ach-stat.commande{background:#fef3c7;color:var(--am)}
 .ach-stat.recu{background:#dcfce7;color:var(--gr)}
 
+/* ── ENVOIS ───────────────────────────────────────────────── */
+.env-card{background:#fff;border:1px solid var(--g200);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
+.env-card.new{border-left:3px solid var(--bl)}
+.env-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.env-nom{font-size:14px;font-weight:700;color:var(--g800)}
+.env-badge{background:var(--bl);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;vertical-align:middle}
+.env-meta{font-size:12px;color:var(--g600);margin-top:3px}
+.env-date{font-size:11px;color:var(--g500);margin-top:5px}
+.env-gal{display:flex;flex-wrap:wrap;gap:8px;margin:11px 0}
+.env-thumb{width:84px;height:84px;border-radius:6px;overflow:hidden;cursor:pointer;border:1px solid var(--g200);background:var(--g100)}
+.env-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.env-file{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:8px 11px;background:var(--g100);border:1px solid var(--g200);border-radius:6px;color:var(--g700);text-decoration:none;font-weight:600}
+.env-file:hover{background:var(--g200)}
+.env-file i{font-size:16px;color:var(--rd)}
+.env-actions{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:6px}
+#lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;align-items:center;justify-content:center;cursor:zoom-out}
+#lightbox.open{display:flex}
+#lightbox img{max-width:94vw;max-height:90vh;border-radius:6px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+#lightbox .lb-close{position:absolute;top:16px;right:22px;color:#fff;font-size:30px;font-weight:300;cursor:pointer}
+
 /* ── MESURES ──────────────────────────────────────────────── */
 .mes-card{background:#fff;border:1px solid var(--g200);border-radius:var(--r);padding:14px;cursor:pointer;transition:.15s;margin-bottom:10px}
 .mes-card:hover{box-shadow:var(--sh2);border-color:var(--bl)}
@@ -338,6 +359,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="ni" id="ni-agenda" onclick="goTo('agenda')"><i class="ti ti-calendar ico"></i><span>Agenda</span></div>
     <div class="ni" id="ni-achats" onclick="goTo('achats')"><i class="ti ti-shopping-cart ico"></i><span>Achats</span></div>
     <div class="ni" id="ni-soustraitants" onclick="goTo('soustraitants')"><i class="ti ti-hammer ico"></i><span>Sous-traitants</span></div>
+    <div class="ni" id="ni-envois" onclick="goTo('envois')"><i class="ti ti-inbox ico"></i><span>Envois</span></div>
     <div class="ni" id="ni-mesures" onclick="goTo('mesures')"><i class="ti ti-ruler-measure ico"></i><span>Mesures</span></div>
     <div class="ni" id="ni-clients" onclick="goTo('clients')"><i class="ti ti-users ico"></i><span>Clients</span></div>
     <div class="ni" id="ni-taches" onclick="goTo('taches')"><i class="ti ti-checkbox ico"></i><span>Tâches</span></div>
@@ -355,6 +377,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="mn-item" id="mn-taches" onclick="goTo('taches')"><i class="ti ti-checkbox mn-ico"></i><span class="mn-lbl">Tâches</span></div>
     <div class="mn-item" id="mn-achats" onclick="goTo('achats')"><i class="ti ti-shopping-cart mn-ico"></i><span class="mn-lbl">Achats</span></div>
     <div class="mn-item" id="mn-soustraitants" onclick="goTo('soustraitants')"><i class="ti ti-hammer mn-ico"></i><span class="mn-lbl">S-traitants</span></div>
+    <div class="mn-item" id="mn-envois" onclick="goTo('envois')"><i class="ti ti-inbox mn-ico"></i><span class="mn-lbl">Envois</span></div>
   </div>
 </div>
 
@@ -445,6 +468,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:16px" id="st-stats"></div>
     <div class="dfilter" id="st-filter"></div>
     <div id="st-list"></div>
+  </div>
+
+  <!-- ENVOIS -->
+  <div class="page" id="pg-envois">
+    <div class="ph">
+      <div><div class="pt">Envois des sous-traitants</div><div class="ps" id="env-sub"></div></div>
+      <button class="btn btn-p" onclick="copyEnvoiLink()"><i class="ti ti-link"></i> Copier le lien d'envoi</button>
+    </div>
+    <div id="env-list"></div>
   </div>
 
   <!-- MESURES -->
@@ -795,6 +827,13 @@ function setupListeners(){
     },err=>setSyncStatus('err'));
     fsListeners.push(unsub);
   });
+  // Collection partagée "envois" (déposée par les sous-traitants via envoi.html)
+  const unsubEnv=db.collection('envois').orderBy('ts','desc').onSnapshot(snap=>{
+    const items=snap.docs.map(d=>({id:d.id,...d.data()}));
+    localStorage.setItem('crm3_envois',JSON.stringify(items));
+    if(document.getElementById('login-screen').style.display==='none')render(curPage);
+  },err=>{/* index/permissions pas encore prêts : on ignore silencieusement */});
+  fsListeners.push(unsubEnv);
 }
 
 function pushLocalToFirestore(){
@@ -847,6 +886,7 @@ const save=(k,v)=>{localStorage.setItem('crm3_'+k,JSON.stringify(v));fsSave(k,v)
 const clients=()=>load('clients'), affaires=()=>load('affaires'), taches=()=>load('taches');
 const events=()=>load('events'), achats=()=>load('achats'), mesures=()=>load('mesures');
 const soustraitants=()=>load('soustraitants');
+const envois=()=>load('envois'); // collection partagée (top-level), pas dans FS_COLS
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const today=()=>new Date().toISOString().split('T')[0];
 const vl=id=>document.getElementById(id).value.trim();
@@ -873,8 +913,8 @@ function setDF(s,v){
 }
 
 // ── NAV ───────────────────────────────────────────────────────
-const PAGES=['dashboard','pipeline','agenda','achats','soustraitants','mesures','clients','taches'];
-const TITLES={dashboard:'Tableau de bord',pipeline:'Pipeline commercial',agenda:'Agenda',achats:'Achats fournisseurs',soustraitants:'Paiement sous-traitants',mesures:'Prises de mesures',clients:'Clients',taches:'Tâches'};
+const PAGES=['dashboard','pipeline','agenda','achats','soustraitants','envois','mesures','clients','taches'];
+const TITLES={dashboard:'Tableau de bord',pipeline:'Pipeline commercial',agenda:'Agenda',achats:'Achats fournisseurs',soustraitants:'Paiement sous-traitants',envois:'Envois des sous-traitants',mesures:'Prises de mesures',clients:'Clients',taches:'Tâches'};
 let curPage='dashboard';
 function goTo(p){
   curPage=p;
@@ -888,6 +928,7 @@ function render(p){
   if(p==='agenda')renderAgenda();
   if(p==='achats')renderAchats();
   if(p==='soustraitants')renderSoustraitants();
+  if(p==='envois')renderEnvois();
   if(p==='mesures')renderMesures();
   if(p==='clients')renderClients();
   if(p==='taches')renderTaches();
@@ -1182,6 +1223,69 @@ function saveSt(){
 }
 function delSt(){const id=vl('st-id');if(!id)return;save('soustraitants',soustraitants().filter(x=>x.id!==id));X('mo-st');render(curPage);toast('Intervention supprimée');}
 
+// ── ENVOIS (dépôts sous-traitants) ────────────────────────────
+const ENVOI_URL=location.origin+'/envoi.html';
+function copyEnvoiLink(){
+  navigator.clipboard.writeText(ENVOI_URL).then(()=>toast('Lien copié ✓ — envoie-le à tes sous-traitants')).catch(()=>prompt('Copie ce lien :',ENVOI_URL));
+}
+function envTs(e){return e.ts&&e.ts.seconds?e.ts.seconds*1000:(e.ts||0);}
+function envDate(e){const ms=envTs(e);if(!ms)return'';const d=new Date(ms);return d.toLocaleDateString('fr-FR')+' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
+function renderEnvois(){
+  const ev=envois().slice().sort((a,b)=>envTs(b)-envTs(a));
+  const nouv=ev.filter(e=>!e.vu).length;
+  document.getElementById('env-sub').textContent=ev.length+' envoi'+(ev.length!==1?'s':'')+(nouv?` · ${nouv} nouveau${nouv>1?'x':''}`:'');
+  const list=document.getElementById('env-list');
+  if(!ev.length){list.innerHTML='<div class="empty"><div class="empty-ico">📥</div><div class="empty-txt">Aucun envoi pour le moment.<br>Clique sur « Copier le lien d\'envoi » et transmets-le à tes sous-traitants.</div></div>';return;}
+  list.innerHTML=ev.map(e=>{
+    const files=e.files||[];
+    const gal=files.map((f,i)=>{
+      const isImg=(f.type||'').startsWith('image/');
+      return isImg
+        ? `<div class="env-thumb" onclick="lightbox('${f.url}')"><img src="${f.url}" loading="lazy" alt=""></div>`
+        : `<a class="env-file" href="${f.url}" target="_blank" rel="noopener"><i class="ti ti-file-type-pdf"></i>${(f.name||'fichier').slice(0,22)}</a>`;
+    }).join('');
+    return`<div class="env-card ${e.vu?'':'new'}">
+      <div class="env-head">
+        <div>
+          <div class="env-nom">${e.nom||'Sans nom'}${e.vu?'':' <span class="env-badge">Nouveau</span>'}</div>
+          <div class="env-meta">📍 ${e.adr||'—'}</div>
+          ${e.nat?`<div class="env-meta">🔧 ${e.nat}</div>`:''}
+          ${e.note?`<div class="env-meta">📝 ${e.note}</div>`:''}
+          <div class="env-date">📅 ${envDate(e)} · ${files.length} fichier${files.length!==1?'s':''}</div>
+        </div>
+      </div>
+      ${gal?`<div class="env-gal">${gal}</div>`:''}
+      <div class="env-actions">
+        <button class="btn btn-p btn-sm" onclick="intervFromEnvoi('${e.id}')"><i class="ti ti-cash"></i> Créer l'intervention à payer</button>
+        ${e.vu?'':`<button class="btn btn-s btn-sm" onclick="markEnvoiVu('${e.id}')">✓ Marquer comme vu</button>`}
+        <button class="btn btn-d btn-sm" style="margin-left:auto" onclick="delEnvoi('${e.id}')">Supprimer</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function markEnvoiVu(id){db.collection('envois').doc(id).update({vu:true}).then(()=>toast('Marqué comme vu ✓')).catch(()=>toast('Erreur'));}
+function intervFromEnvoi(id){
+  const e=envois().find(x=>x.id===id); if(!e)return;
+  openSt(); // modal vierge
+  document.getElementById('st-nom').value=e.nom||'';
+  document.getElementById('st-adr').value=e.adr||'';
+  document.getElementById('st-nat').value=e.nat||'';
+  if(!e.vu)db.collection('envois').doc(id).update({vu:true}).catch(()=>{});
+  toast('Ajoute juste le prix 💶');
+}
+function delEnvoi(id){
+  if(!confirm('Supprimer cet envoi et ses fichiers ? Action définitive.'))return;
+  const e=envois().find(x=>x.id===id);
+  (e?.files||[]).forEach(f=>{if(f.path){try{firebase.storage().ref(f.path).delete().catch(()=>{});}catch(_){}}});
+  db.collection('envois').doc(id).delete().then(()=>toast('Envoi supprimé')).catch(()=>toast('Erreur suppression'));
+}
+function lightbox(url){
+  let el=document.getElementById('lightbox');
+  if(!el){el=document.createElement('div');el.id='lightbox';el.onclick=()=>el.classList.remove('open');document.body.appendChild(el);}
+  el.innerHTML=`<img src="${url}" alt=""><span class="lb-close">✕</span>`;
+  el.classList.add('open');
+}
+
 // ── MESURES ───────────────────────────────────────────────────
 let mesPhotos=[];
 function renderMesures(){
@@ -1329,6 +1433,7 @@ function updateBadges(){
   setBadge('ni-taches',taches().filter(x=>!x.done&&x.ech&&x.ech<=t).length);
   setBadge('ni-achats',achats().filter(a=>a.statut==='a_commander').length);
   setBadge('ni-soustraitants',soustraitants().filter(s=>!s.paye).length);
+  setBadge('ni-envois',envois().filter(e=>!e.vu).length);
   setBadge('ni-agenda',events().filter(e=>e.date===t).length);
 }
 function setBadge(ni,n){const el=document.getElementById(ni);el.querySelector('.badge')?.remove();if(n>0)el.insertAdjacentHTML('beforeend',`<span class="badge">${n}</span>`);}
