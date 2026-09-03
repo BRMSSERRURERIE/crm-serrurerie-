@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Envoyer des photos — BRMS Serrurerie</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+<style>
+:root{--bl:#2563eb;--gr:#16a34a;--rd:#dc2626;--g100:#f3f4f6;--g200:#e5e7eb;--g300:#d1d5db;--g400:#9ca3af;--g500:#6b7280;--g700:#374151;--g800:#1f2937;--g900:#111827;--r:10px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--g100);color:var(--g800);min-height:100vh;padding:0 0 40px}
+.top{background:linear-gradient(135deg,#2563eb,#ea580c);color:#fff;padding:26px 20px 22px;text-align:center}
+.top .logo{font-size:34px}
+.top h1{font-size:19px;font-weight:700;margin-top:6px}
+.top p{font-size:13px;opacity:.92;margin-top:4px}
+.wrap{max-width:520px;margin:0 auto;padding:18px}
+.card{background:#fff;border:1px solid var(--g200);border-radius:var(--r);padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.fg{margin-bottom:14px}
+label{display:block;font-size:13px;font-weight:600;color:var(--g700);margin-bottom:5px}
+label .req{color:var(--rd)}
+input[type=text],textarea{width:100%;border:1px solid var(--g300);border-radius:8px;padding:12px;font-size:16px;font-family:inherit;color:var(--g900)}
+input[type=text]:focus,textarea:focus{outline:none;border-color:var(--bl)}
+textarea{resize:vertical;min-height:64px}
+.drop{border:2px dashed var(--g300);border-radius:10px;padding:26px 14px;text-align:center;cursor:pointer;background:var(--g100);transition:.15s}
+.drop:active{background:var(--g200)}
+.drop .ic{font-size:32px}
+.drop .t{font-size:15px;font-weight:600;color:var(--g700);margin-top:6px}
+.drop .s{font-size:12px;color:var(--g500);margin-top:3px}
+#file{display:none}
+.previews{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.pv{position:relative;width:78px;height:78px;border-radius:8px;overflow:hidden;border:1px solid var(--g200);background:var(--g100)}
+.pv img{width:100%;height:100%;object-fit:cover}
+.pv .pdf{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;font-size:11px;color:var(--g500);padding:4px;text-align:center;word-break:break-word}
+.pv .pdf .em{font-size:24px}
+.pv .rm{position:absolute;top:2px;right:2px;width:20px;height:20px;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;font-size:13px;cursor:pointer;line-height:1}
+.btn{width:100%;border:none;border-radius:10px;padding:15px;font-size:16px;font-weight:700;cursor:pointer;margin-top:6px}
+.btn-p{background:var(--bl);color:#fff}
+.btn-p:disabled{background:var(--g300);cursor:not-allowed}
+.hint{font-size:12px;color:var(--g500);text-align:center;margin-top:14px;line-height:1.5}
+.done{text-align:center;padding:34px 18px}
+.done .big{font-size:56px}
+.done h2{font-size:21px;font-weight:700;margin-top:10px;color:var(--gr)}
+.done p{font-size:14px;color:var(--g600);margin-top:8px;line-height:1.5}
+.done .again{margin-top:22px;background:var(--g100);color:var(--g700);border:1px solid var(--g300)}
+.err{background:#fef2f2;color:var(--rd);border:1px solid #fecaca;border-radius:8px;padding:11px;font-size:13px;margin-top:12px;display:none}
+.prog{display:none;margin-top:14px}
+.bar{height:8px;background:var(--g200);border-radius:5px;overflow:hidden}
+.bar>i{display:block;height:100%;width:0;background:var(--bl);transition:width .2s}
+.prog .lbl{font-size:12px;color:var(--g500);text-align:center;margin-top:6px}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo">🔑</div>
+  <h1>Envoyer des photos</h1>
+  <p>BRMS Serrurerie · Volets</p>
+</div>
+<div class="wrap">
+  <div class="card" id="form-card">
+    <div class="fg">
+      <label>Votre nom <span class="req">*</span></label>
+      <input type="text" id="nom" placeholder="Ex : Dupont Serrurerie" autocomplete="name">
+    </div>
+    <div class="fg">
+      <label>Adresse du chantier <span class="req">*</span></label>
+      <input type="text" id="adr" placeholder="Ex : 12 rue de la Paix, 75002 Paris">
+    </div>
+    <div class="fg">
+      <label>Nature de l'intervention</label>
+      <input type="text" id="nat" placeholder="Ex : Pose serrure 3 points (optionnel)">
+    </div>
+    <div class="fg">
+      <label>Note</label>
+      <textarea id="note" placeholder="Précisions éventuelles (optionnel)"></textarea>
+    </div>
+    <div class="fg">
+      <label>Photos / PDF <span class="req">*</span></label>
+      <div class="drop" onclick="document.getElementById('file').click()">
+        <div class="ic">📷</div>
+        <div class="t">Ajouter des photos ou PDF</div>
+        <div class="s">Prenez une photo ou choisissez des fichiers</div>
+      </div>
+      <input type="file" id="file" accept="image/*,application/pdf" multiple onchange="addFiles(this.files)">
+      <div class="previews" id="previews"></div>
+    </div>
+    <div class="err" id="err"></div>
+    <button class="btn btn-p" id="send" onclick="submitEnvoi()">Envoyer</button>
+    <div class="prog" id="prog"><div class="bar"><i id="bar-i"></i></div><div class="lbl" id="prog-lbl">Envoi en cours…</div></div>
+    <div class="hint">Vos fichiers sont transmis directement à l'entreprise.<br>Vous n'avez pas besoin de compte.</div>
+  </div>
+
+  <div class="card done" id="done-card" style="display:none">
+    <div class="big">✅</div>
+    <h2>Envoi réussi !</h2>
+    <p>Merci, vos photos ont bien été transmises à l'entreprise.</p>
+    <button class="btn again" onclick="resetForm()">Envoyer un autre chantier</button>
+  </div>
+</div>
+
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCTbHhiNpPT84Ykt6ltI-ORxAUgPs1-21M",
+  authDomain:"brms-crm.firebaseapp.com",
+  projectId:"brms-crm",
+  storageBucket:"brms-crm.firebasestorage.app",
+  messagingSenderId:"698622303865",
+  appId:"1:698622303865:web:f00f6d74ac5d34b4603ea8"
+});
+const db=firebase.firestore();
+const auth=firebase.auth();
+const storage=firebase.storage();
+
+// Connexion anonyme (permet le dépôt sans compte)
+auth.signInAnonymously().catch(e=>showErr("Connexion impossible. Réessayez plus tard."));
+
+// Pré-remplir le nom si le lien contient #Nom
+if(location.hash.length>1){
+  try{document.getElementById('nom').value=decodeURIComponent(location.hash.slice(1));}catch(_){}
+}
+
+const MAX=15*1024*1024; // 15 Mo / fichier
+let picked=[]; // {file, url}
+
+function addFiles(fileList){
+  for(const f of fileList){
+    if(f.size>MAX){showErr(`"${f.name}" dépasse 15 Mo et a été ignoré.`);continue;}
+    const ok=f.type.startsWith('image/')||f.type==='application/pdf';
+    if(!ok){showErr(`"${f.name}" n'est pas une photo ou un PDF.`);continue;}
+    picked.push({file:f,url:f.type.startsWith('image/')?URL.createObjectURL(f):null});
+  }
+  document.getElementById('file').value='';
+  renderPreviews();
+}
+function removeFile(i){picked.splice(i,1);renderPreviews();}
+function renderPreviews(){
+  document.getElementById('previews').innerHTML=picked.map((p,i)=>{
+    const inner=p.url
+      ? `<img src="${p.url}" alt="">`
+      : `<div class="pdf"><span class="em">📄</span>${(p.file.name||'PDF').slice(0,18)}</div>`;
+    return `<div class="pv">${inner}<button class="rm" onclick="removeFile(${i})">✕</button></div>`;
+  }).join('');
+}
+function showErr(m){const e=document.getElementById('err');e.textContent=m;e.style.display='block';setTimeout(()=>{e.style.display='none';},5000);}
+
+async function submitEnvoi(){
+  const nom=document.getElementById('nom').value.trim();
+  const adr=document.getElementById('adr').value.trim();
+  const nat=document.getElementById('nat').value.trim();
+  const note=document.getElementById('note').value.trim();
+  if(!nom){showErr('Merci d\'indiquer votre nom.');return;}
+  if(!adr){showErr('Merci d\'indiquer l\'adresse du chantier.');return;}
+  if(!picked.length){showErr('Ajoutez au moins une photo ou un PDF.');return;}
+  if(!auth.currentUser){showErr('Connexion en cours, réessayez dans 2 secondes.');return;}
+
+  const btn=document.getElementById('send');
+  btn.disabled=true;btn.textContent='Envoi…';
+  document.getElementById('prog').style.display='block';
+  const barI=document.getElementById('bar-i'),lbl=document.getElementById('prog-lbl');
+
+  const envoiId=Date.now().toString(36)+Math.random().toString(36).slice(2,8);
+  const files=[];
+  try{
+    for(let i=0;i<picked.length;i++){
+      const f=picked[i].file;
+      const safe=(f.name||('fichier'+i)).replace(/[^a-zA-Z0-9._-]/g,'_');
+      const path=`envois/${envoiId}/${i}_${safe}`;
+      lbl.textContent=`Envoi ${i+1} / ${picked.length}…`;
+      const ref=storage.ref(path);
+      await ref.put(f,{contentType:f.type});
+      const url=await ref.getDownloadURL();
+      files.push({name:f.name||safe,type:f.type,size:f.size,url,path});
+      barI.style.width=Math.round(((i+1)/picked.length)*100)+'%';
+    }
+    await db.collection('envois').doc(envoiId).set({
+      nom,adr,nat,note,files,vu:false,ts:firebase.firestore.FieldValue.serverTimestamp()
+    });
+    document.getElementById('form-card').style.display='none';
+    document.getElementById('done-card').style.display='block';
+    window.scrollTo(0,0);
+  }catch(e){
+    console.error(e);
+    showErr('Échec de l\'envoi. Vérifiez votre connexion et réessayez.');
+    btn.disabled=false;btn.textContent='Envoyer';
+    document.getElementById('prog').style.display='none';
+  }
+}
+function resetForm(){
+  picked=[];renderPreviews();
+  ['adr','nat','note'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('bar-i').style.width='0';
+  document.getElementById('prog').style.display='none';
+  const btn=document.getElementById('send');btn.disabled=false;btn.textContent='Envoyer';
+  document.getElementById('done-card').style.display='none';
+  document.getElementById('form-card').style.display='block';
+  window.scrollTo(0,0);
+}
+</script>
+</body>
+</html>
