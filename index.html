@@ -205,6 +205,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .env-file{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:8px 11px;background:var(--g100);border:1px solid var(--g200);border-radius:6px;color:var(--g700);text-decoration:none;font-weight:600}
 .env-file:hover{background:var(--g200)}
 .env-file i{font-size:16px;color:var(--rd)}
+.env-paylink{font-size:12px;color:var(--gr);background:var(--gr-lt,#f0fdf4);border:1px solid #bbf7d0;border-radius:6px;padding:7px 10px;margin:2px 0 9px}
 .env-actions{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:6px}
 #lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;align-items:center;justify-content:center;cursor:zoom-out}
 #lightbox.open{display:flex}
@@ -813,29 +814,36 @@ function fsSave(k,v){
 }
 
 let fsListeners=[];
+const colLoaded={}; // suit quelles collections ont reçu leur 1er snapshot (sécurité anti-écrasement)
 function setupListeners(){
   fsListeners.forEach(u=>u());
   fsListeners=[];
   FS_COLS.forEach(col=>{
     const unsub=fsPath(col).onSnapshot(snap=>{
-      if(!snap.exists)return;
-      const d=snap.data();
-      if(!d||!d.items)return;
-      if(col==='mesures'){
-        const local=load('mesures');
-        const merged=d.items.map(r=>{const l=local.find(m=>m.id===r.id);return{...r,photos:l?.photos||[]};});
-        localStorage.setItem('crm3_mesures',JSON.stringify(merged));
-      } else {
-        localStorage.setItem('crm3_'+col,JSON.stringify(d.items));
+      colLoaded[col]=true;
+      if(snap.exists){
+        const d=snap.data();
+        if(d&&d.items){
+          if(col==='mesures'){
+            const local=load('mesures');
+            const merged=d.items.map(r=>{const l=local.find(m=>m.id===r.id);return{...r,photos:l?.photos||[]};});
+            localStorage.setItem('crm3_mesures',JSON.stringify(merged));
+          } else {
+            localStorage.setItem('crm3_'+col,JSON.stringify(d.items));
+          }
+        }
       }
+      if(col==='soustraitants')maybeSyncEnvois();
       if(document.getElementById('login-screen').style.display==='none')render(curPage);
     },err=>setSyncStatus('err'));
     fsListeners.push(unsub);
   });
   // Collection partagée "envois" (déposée par les sous-traitants via envoi.html)
   const unsubEnv=db.collection('envois').orderBy('ts','desc').onSnapshot(snap=>{
+    colLoaded.envois=true;
     const items=snap.docs.map(d=>({id:d.id,...d.data()}));
     localStorage.setItem('crm3_envois',JSON.stringify(items));
+    maybeSyncEnvois();
     if(document.getElementById('login-screen').style.display==='none')render(curPage);
   },err=>{/* index/permissions pas encore prêts : on ignore silencieusement */});
   fsListeners.push(unsubEnv);
@@ -1235,6 +1243,23 @@ function copyEnvoiLink(){
 }
 function envTs(e){return e.ts&&e.ts.seconds?e.ts.seconds*1000:(e.ts||0);}
 function envDate(e){const ms=envTs(e);if(!ms)return'';const d=new Date(ms);return d.toLocaleDateString('fr-FR')+' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});}
+
+// Auto-création d'un paiement sous-traitant à chaque nouvel envoi (create-once)
+const processedEnvois=new Set();
+function maybeSyncEnvois(){ if(colLoaded.envois&&colLoaded.soustraitants)syncEnvoisToPaiements(); }
+function syncEnvoisToPaiements(){
+  const st=soustraitants(); let changed=false;
+  envois().forEach(e=>{
+    if(e.paidCreated||processedEnvois.has(e.id)||st.some(s=>s.envoiId===e.id))return;
+    processedEnvois.add(e.id);
+    const ms=envTs(e); const dstr=ms?new Date(ms).toISOString().split('T')[0]:today();
+    st.push({id:uid(),createdAt:today(),envoiId:e.id,nom:e.nom||'',adr:e.adr||'',nat:e.nat||'',prix:'',date:dstr,paye:false});
+    changed=true;
+    db.collection('envois').doc(e.id).update({paidCreated:true}).catch(()=>{});
+  });
+  if(changed){save('soustraitants',st);toast('💰 Paiement sous-traitant créé — ajoute le montant');}
+}
+function goToPaiementFromEnvoi(eid){const e=envois().find(x=>x.id===eid);goTo('soustraitants');stFilter=e&&e.nom?e.nom:'all';renderSoustraitants();}
 function renderEnvois(){
   const ev=envois().slice().sort((a,b)=>envTs(b)-envTs(a));
   const nouv=ev.filter(e=>!e.vu).length;
@@ -1260,8 +1285,9 @@ function renderEnvois(){
         </div>
       </div>
       ${gal?`<div class="env-gal">${gal}</div>`:''}
+      <div class="env-paylink">💰 Un paiement sous-traitant a été créé automatiquement — ajoute juste le montant.</div>
       <div class="env-actions">
-        <button class="btn btn-p btn-sm" onclick="intervFromEnvoi('${e.id}')"><i class="ti ti-cash"></i> Créer l'intervention à payer</button>
+        <button class="btn btn-p btn-sm" onclick="goToPaiementFromEnvoi('${e.id}')"><i class="ti ti-cash"></i> Voir le paiement</button>
         ${e.vu?'':`<button class="btn btn-s btn-sm" onclick="markEnvoiVu('${e.id}')">✓ Marquer comme vu</button>`}
         <button class="btn btn-d btn-sm" style="margin-left:auto" onclick="delEnvoi('${e.id}')">Supprimer</button>
       </div>
