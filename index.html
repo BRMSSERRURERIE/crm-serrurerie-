@@ -188,6 +188,15 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ach-stat.a_commander{background:#fee2e2;color:var(--rd)}
 .ach-stat.commande{background:#fef3c7;color:var(--am)}
 .ach-stat.recu{background:#dcfce7;color:var(--gr)}
+.st-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.st-prix-edit{display:inline-flex;align-items:center;gap:3px;font-weight:700;color:var(--g700);font-size:13px;cursor:text}
+.st-prix-edit input{width:70px;padding:7px 8px;border:1px solid var(--g300);border-radius:6px;font-size:14px;font-weight:700;text-align:right;color:var(--g900);background:#fff;-moz-appearance:textfield}
+.st-prix-edit input::-webkit-outer-spin-button,.st-prix-edit input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.st-prix-edit input::placeholder{color:var(--g400);font-weight:500}
+.st-prix-edit input:focus{outline:none;border-color:var(--bl);background:var(--bl-lt);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.st-edit{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:7px 11px;border:1px solid var(--g300);background:#fff;color:var(--g700);border-radius:6px;cursor:pointer;white-space:nowrap}
+.st-edit:hover{background:var(--g100);border-color:var(--g400)}
+.st-edit i{font-size:14px}
 
 /* ── ENVOIS ───────────────────────────────────────────────── */
 .env-card{background:#fff;border:1px solid var(--g200);border-radius:var(--r);padding:14px;margin-bottom:10px;box-shadow:var(--sh)}
@@ -1222,14 +1231,27 @@ function renderSoustraitants(){
             ${s.adr?`<span>📍 ${s.adr}</span>`:''}
             ${s.nat?`<span>🔧 ${s.nat}</span>`:''}
             ${s.date?`<span>📅 ${fmtDate(s.date)}</span>`:''}
-            <span style="font-weight:700">${eur(parseFloat(s.prix)||0)}</span>
           </div>
         </div>
-        <span class="ach-stat ${s.paye?'recu':'a_commander'}" onclick="toggleStPaye(event,'${s.id}')">${s.paye?'✓ Payé':'À payer'}</span>
+        <div class="st-right" onclick="event.stopPropagation()">
+          <label class="st-prix-edit" title="Cliquez pour saisir le montant">
+            <input type="number" inputmode="decimal" step="0.01" min="0" placeholder="0" value="${s.prix!==''&&s.prix!=null?s.prix:''}" onchange="setStPrix('${s.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()"> €
+          </label>
+          <span class="ach-stat ${s.paye?'recu':'a_commander'}" onclick="toggleStPaye(event,'${s.id}')">${s.paye?'✓ Payé':'À payer'}</span>
+          <button class="st-edit" title="Modifier la fiche" onclick="openSt('${s.id}')"><i class="ti ti-pencil"></i> Modifier</button>
+        </div>
       </div>`).join('')}`;
   }).join('');
 }
 function toggleStPaye(ev,id){ev.stopPropagation();const st=soustraitants();const i=st.findIndex(x=>x.id===id);if(i<0)return;st[i].paye=!st[i].paye;save('soustraitants',st);render(curPage);toast(st[i].paye?'Marqué payé ✓':'Marqué à payer');}
+function setStPrix(id,val){
+  const st=soustraitants();const i=st.findIndex(x=>x.id===id);if(i<0)return;
+  const clean=(val===''||val==null)?'':String(parseFloat(val)||0);
+  if(st[i].prix===clean)return; // rien changé
+  st[i].prix=clean;
+  save('soustraitants',st);render(curPage);
+  toast(clean?'Prix enregistré : '+eur(parseFloat(clean)):'Prix effacé');
+}
 function openSt(id){
   document.getElementById('mst-title').textContent=id?'Modifier l\'intervention':'Nouvelle intervention';
   document.getElementById('btn-del-st').style.display=id?'inline-flex':'none';
