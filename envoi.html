@@ -170,7 +170,8 @@ async function submitEnvoi(){
       const path=`envois/${envoiId}/${i}_${safe}`;
       lbl.textContent=`Envoi ${i+1} / ${picked.length}…`;
       const ref=storage.ref(path);
-      await ref.put(f,{contentType:f.type});
+      const dispName=(f.name||safe).replace(/["\\\r\n]/g,'');
+      await ref.put(f,{contentType:f.type,contentDisposition:'attachment; filename="'+dispName+'"'});
       const url=await ref.getDownloadURL();
       files.push({name:f.name||safe,type:f.type,size:f.size,url,path});
       barI.style.width=Math.round(((i+1)/picked.length)*100)+'%';
