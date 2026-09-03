@@ -1242,8 +1242,8 @@ function renderSoustraitants(){
           <label class="st-prix-edit" title="Cliquez pour saisir le montant">
             <input type="text" inputmode="decimal" placeholder="0" value="${s.prix!==''&&s.prix!=null?s.prix:''}" onchange="setStPrix('${s.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()"> €
           </label>
-          <span class="ach-stat ${s.paye?'recu':'a_commander'}" onclick="toggleStPaye(event,'${s.id}')">${s.paye?'✓ Payé':'À payer'}</span>
-          <button class="st-edit" title="Modifier la fiche" onclick="openSt('${s.id}')"><i class="ti ti-pencil"></i> Modifier</button>
+          <span class="ach-stat ${s.paye?'recu':'a_commander'}" onmousedown="toggleStPaye(event,'${s.id}')">${s.paye?'✓ Payé':'À payer'}</span>
+          <button class="st-edit" title="Modifier la fiche" onmousedown="openSt('${s.id}')"><i class="ti ti-pencil"></i> Modifier</button>
         </div>
       </div>`).join('')}`;
   }).join('');
