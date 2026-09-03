@@ -206,6 +206,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .env-file:hover{background:var(--g200)}
 .env-file i{font-size:16px;color:var(--rd)}
 .env-paylink{font-size:12px;color:var(--gr);background:var(--gr-lt,#f0fdf4);border:1px solid #bbf7d0;border-radius:6px;padding:7px 10px;margin:2px 0 9px}
+.st-sharebar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--bl-lt);border:1px solid #bfdbfe;border-radius:var(--r);padding:10px 13px;margin-bottom:14px;font-size:12px;color:var(--g700)}
 .env-actions{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-top:6px}
 #lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;align-items:center;justify-content:center;cursor:zoom-out}
 #lightbox.open{display:flex}
@@ -473,6 +474,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     </div>
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:16px" id="st-stats"></div>
     <div class="dfilter" id="st-filter"></div>
+    <div id="st-share"></div>
     <div id="st-list"></div>
   </div>
 
@@ -833,11 +835,19 @@ function setupListeners(){
           }
         }
       }
-      if(col==='soustraitants')maybeSyncEnvois();
+      if(col==='soustraitants'){maybeSyncEnvois();refreshSoldes();}
       if(document.getElementById('login-screen').style.display==='none')render(curPage);
     },err=>setSyncStatus('err'));
     fsListeners.push(unsub);
   });
+  // Collection partagée "soldes" (liens de suivi sous-traitants)
+  const unsubSld=db.collection('soldes').onSnapshot(snap=>{
+    colLoaded.soldes=true;
+    localStorage.setItem('crm3_soldes',JSON.stringify(snap.docs.map(d=>({id:d.id,...d.data()}))));
+    refreshSoldes();
+    if(document.getElementById('login-screen').style.display==='none'&&curPage==='soustraitants')renderSoustraitants();
+  },err=>{/* règles pas encore prêtes : ignoré */});
+  fsListeners.push(unsubSld);
   // Collection partagée "envois" (déposée par les sous-traitants via envoi.html)
   const unsubEnv=db.collection('envois').orderBy('ts','desc').onSnapshot(snap=>{
     colLoaded.envois=true;
@@ -900,6 +910,7 @@ const clients=()=>load('clients'), affaires=()=>load('affaires'), taches=()=>loa
 const events=()=>load('events'), achats=()=>load('achats'), mesures=()=>load('mesures');
 const soustraitants=()=>load('soustraitants');
 const envois=()=>load('envois'); // collection partagée (top-level), pas dans FS_COLS
+const soldes=()=>load('soldes'); // liens de suivi sous-traitants (top-level)
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const today=()=>new Date().toISOString().split('T')[0];
 const vl=id=>document.getElementById(id).value.trim();
@@ -1181,6 +1192,13 @@ function renderSoustraitants(){
   const duMois=st.filter(s=>!s.paye&&stKey(s)===curM).reduce((t,s)=>t+(parseFloat(s.prix)||0),0);
   const payeMois=st.filter(s=>s.paye&&stKey(s)===curM).reduce((t,s)=>t+(parseFloat(s.prix)||0),0);
   document.getElementById('st-sub').textContent=(stFilter==='all'?'':stFilter+' — ')+st.length+' intervention'+(st.length!==1?'s':'');
+  const share=document.getElementById('st-share');
+  if(stFilter==='all'){share.innerHTML='';}
+  else{
+    const has=soldes().some(s=>s.nom===stFilter);
+    share.innerHTML=`<div class="st-sharebar"><span>🔗 Lien de suivi pour <b>${stFilter}</b> — il voit ce que tu lui dois, mis à jour tout seul.</span>
+      <button class="btn btn-s btn-sm" onclick="soldeLinkFor('${stFilter.replace(/'/g,"\\'")}')"><i class="ti ti-link"></i> ${has?'Copier le lien':'Créer & copier le lien'}</button></div>`;
+  }
   document.getElementById('st-stats').innerHTML=`
     <div class="sc ${totDu?'red':'grn'}"><div class="sl">Total dû</div><div class="sv">${eur(totDu)}</div><div class="ss">${st.filter(s=>!s.paye).length} non payée${st.filter(s=>!s.paye).length!==1?'s':''}</div></div>
     <div class="sc amb"><div class="sl">Dû ce mois-ci</div><div class="sv">${eur(duMois)}</div><div class="ss">${stMoisLabel(curM)}</div></div>
@@ -1235,6 +1253,38 @@ function saveSt(){
   save('soustraitants',st); X('mo-st'); render(curPage); toast(id?'Intervention mise à jour ✓':'Intervention ajoutée ✓');
 }
 function delSt(){const id=vl('st-id');if(!id)return;save('soustraitants',soustraitants().filter(x=>x.id!==id));X('mo-st');render(curPage);toast('Intervention supprimée');}
+
+// ── LIENS DE SUIVI SOUS-TRAITANTS (soldes) ────────────────────
+function sldToken(){let t='';for(let i=0;i<4;i++)t+=Math.random().toString(36).slice(2,10);return t;} // ~28 car. imprévisibles
+function computeSolde(nom){
+  const items=soustraitants().filter(s=>(s.nom||'')===nom);
+  const lignes=items.map(s=>({adr:s.adr||'',nat:s.nat||'',prix:parseFloat(s.prix)||0,date:s.date||'',paye:!!s.paye}))
+    .sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const du=items.filter(s=>!s.paye).reduce((t,s)=>t+(parseFloat(s.prix)||0),0);
+  const total=items.reduce((t,s)=>t+(parseFloat(s.prix)||0),0);
+  return {nom,du,total,lignes};
+}
+function writeSolde(token,nom){
+  const p=computeSolde(nom);
+  return db.collection('soldes').doc(token).set({...p,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+}
+function soldeLinkFor(nom){
+  const existing=soldes().find(s=>s.nom===nom);
+  const token=existing?existing.id:sldToken();
+  writeSolde(token,nom); // crée ou rafraîchit
+  const url=location.origin+'/solde.html?t='+token;
+  navigator.clipboard.writeText(url)
+    .then(()=>toast('🔗 Lien de suivi copié ✓ — envoie-le à '+nom))
+    .catch(()=>prompt('Lien de suivi de '+nom+' :',url));
+}
+function refreshSoldes(){ // met à jour les liens existants quand les paiements changent
+  if(!colLoaded.soldes||!colLoaded.soustraitants)return;
+  soldes().forEach(sd=>{
+    const p=computeSolde(sd.nom);
+    if(sd.du===p.du&&sd.total===p.total&&JSON.stringify(sd.lignes||[])===JSON.stringify(p.lignes))return; // rien changé
+    db.collection('soldes').doc(sd.id).set({...p,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}).catch(()=>{});
+  });
+}
 
 // ── ENVOIS (dépôts sous-traitants) ────────────────────────────
 const ENVOI_URL=location.origin+'/envoi.html';
