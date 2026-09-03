@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Mon suivi de paiement — BRMS Serrurerie</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<style>
+:root{--bl:#2563eb;--gr:#16a34a;--rd:#dc2626;--am:#d97706;--g100:#f3f4f6;--g200:#e5e7eb;--g300:#d1d5db;--g500:#6b7280;--g600:#4b5563;--g700:#374151;--g800:#1f2937;--g900:#111827;--r:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--g100);color:var(--g800);min-height:100vh;padding-bottom:40px}
+.top{background:linear-gradient(135deg,#2563eb,#ea580c);color:#fff;padding:24px 20px 20px;text-align:center}
+.top .logo{font-size:30px}
+.top h1{font-size:17px;font-weight:700;margin-top:4px}
+.top p{font-size:12px;opacity:.9;margin-top:2px}
+.wrap{max-width:560px;margin:0 auto;padding:18px}
+.hero{background:#fff;border:1px solid var(--g200);border-radius:var(--r);padding:22px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.hero .who{font-size:14px;color:var(--g500)}
+.hero .lbl{font-size:13px;color:var(--g600);margin-top:12px;text-transform:uppercase;letter-spacing:.04em;font-weight:600}
+.hero .amount{font-size:44px;font-weight:800;color:var(--gr);line-height:1.1;margin-top:4px}
+.hero .amount.zero{color:var(--g400)}
+.hero .sub{font-size:12px;color:var(--g500);margin-top:10px}
+.section{font-size:12px;font-weight:700;color:var(--g500);text-transform:uppercase;letter-spacing:.05em;margin:22px 4px 8px}
+.row{background:#fff;border:1px solid var(--g200);border-radius:10px;padding:13px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.row .adr{font-size:14px;font-weight:600;color:var(--g800)}
+.row .nat{font-size:12px;color:var(--g600);margin-top:3px}
+.row .date{font-size:11px;color:var(--g500);margin-top:4px}
+.row .right{text-align:right;flex-shrink:0}
+.row .prix{font-size:15px;font-weight:700;color:var(--g900)}
+.tag{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-top:5px}
+.tag.paye{background:#dcfce7;color:var(--gr)}
+.tag.du{background:#fee2e2;color:var(--rd)}
+.tot{display:flex;justify-content:space-between;font-size:13px;color:var(--g600);padding:10px 4px 0;border-top:1px solid var(--g200);margin-top:6px}
+.tot b{color:var(--g900)}
+.state{text-align:center;padding:50px 20px;color:var(--g500)}
+.state .ic{font-size:44px}
+.state p{margin-top:12px;font-size:14px;line-height:1.5}
+.foot{text-align:center;font-size:11px;color:var(--g400);margin-top:24px;line-height:1.6}
+</style>
+</head>
+<body>
+<div class="top">
+  <div class="logo">🔑</div>
+  <h1>Suivi de paiement</h1>
+  <p>BRMS Serrurerie · Volets</p>
+</div>
+<div class="wrap" id="wrap">
+  <div class="state"><div class="ic">⏳</div><p>Chargement…</p></div>
+</div>
+
+<script>
+firebase.initializeApp({
+  apiKey:"AIzaSyCTbHhiNpPT84Ykt6ltI-ORxAUgPs1-21M",
+  authDomain:"brms-crm.firebaseapp.com",
+  projectId:"brms-crm",
+  storageBucket:"brms-crm.firebasestorage.app",
+  messagingSenderId:"698622303865",
+  appId:"1:698622303865:web:f00f6d74ac5d34b4603ea8"
+});
+const db=firebase.firestore();
+const eur=n=>(Math.round((n||0)*100)/100).toLocaleString('fr-FR',{minimumFractionDigits:0,maximumFractionDigits:2})+' €';
+const fmtDate=d=>{if(!d)return'';const[y,m,j]=d.split('-');return`${j}/${m}/${y}`;};
+const token=new URLSearchParams(location.search).get('t');
+const wrap=document.getElementById('wrap');
+
+function stateMsg(ic,txt){wrap.innerHTML=`<div class="state"><div class="ic">${ic}</div><p>${txt}</p></div>`;}
+
+if(!token){
+  stateMsg('🔒','Lien invalide. Demandez un nouveau lien de suivi à l\'entreprise.');
+}else{
+  db.collection('soldes').doc(token).onSnapshot(snap=>{
+    if(!snap.exists){stateMsg('🔒','Ce lien n\'est plus valide. Contactez l\'entreprise.');return;}
+    render(snap.data());
+  },err=>{stateMsg('⚠️','Impossible de charger le suivi. Réessayez plus tard.');});
+}
+
+function render(d){
+  const lignes=(d.lignes||[]).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  const impayes=lignes.filter(l=>!l.paye);
+  const payes=lignes.filter(l=>l.paye);
+  const rowHtml=l=>`<div class="row">
+    <div>
+      <div class="adr">📍 ${l.adr||'—'}</div>
+      ${l.nat?`<div class="nat">🔧 ${l.nat}</div>`:''}
+      <div class="date">📅 ${fmtDate(l.date)||'—'}</div>
+    </div>
+    <div class="right">
+      <div class="prix">${eur(l.prix)}</div>
+      <span class="tag ${l.paye?'paye':'du'}">${l.paye?'Payé ✓':'À payer'}</span>
+    </div>
+  </div>`;
+  wrap.innerHTML=`
+    <div class="hero">
+      <div class="who">${d.nom||''}</div>
+      <div class="lbl">BRMS vous doit</div>
+      <div class="amount ${d.du?'':'zero'}">${eur(d.du)}</div>
+      <div class="sub">${d.du?'Montant restant à régler':'Vous êtes à jour ✓'}</div>
+    </div>
+    ${impayes.length?`<div class="section">À payer (${impayes.length})</div>${impayes.map(rowHtml).join('')}`:''}
+    ${payes.length?`<div class="section">Déjà payé (${payes.length})</div>${payes.map(rowHtml).join('')}`:''}
+    <div class="tot"><span>Total des interventions</span><b>${eur(d.total)}</b></div>
+    <div class="foot">Ce suivi se met à jour automatiquement.<br>Pour toute question, contactez l'entreprise.</div>
+  `;
+}
+</script>
+</body>
+</html>
