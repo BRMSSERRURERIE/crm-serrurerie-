@@ -1246,7 +1246,7 @@ function renderEnvois(){
     const gal=files.map((f,i)=>{
       const isImg=(f.type||'').startsWith('image/');
       return isImg
-        ? `<div class="env-thumb"><img src="${f.url}" loading="lazy" alt="" onclick="lightbox('${e.id}',${i})"><button class="env-dl" title="Télécharger la photo" onclick="dlEnvoiFile('${e.id}',${i})"><i class="ti ti-download"></i></button></div>`
+        ? `<div class="env-thumb"><img src="${f.url}" loading="lazy" alt="" onclick="lightbox('${e.id}',${i})"><a class="env-dl" title="Télécharger la photo" href="${f.url}" download="${(f.name||'photo').replace(/"/g,'')}" target="_blank" rel="noopener"><i class="ti ti-download"></i></a></div>`
         : `<a class="env-file" href="${f.url}" target="_blank" rel="noopener" download><i class="ti ti-file-type-pdf"></i>${(f.name||'fichier').slice(0,22)}</a>`;
     }).join('');
     return`<div class="env-card ${e.vu?'':'new'}">
@@ -1308,8 +1308,7 @@ function lightbox(eid,i){
   if(!el){el=document.createElement('div');el.id='lightbox';el.onclick=(ev)=>{if(ev.target.id==='lightbox')el.classList.remove('open');};document.body.appendChild(el);}
   el.innerHTML=`<img src="${url}" alt="">
     <div class="lb-bar">
-      ${f?`<button class="lb-btn" onclick="dlEnvoiFile('${eid}',${i})"><i class="ti ti-download"></i> Télécharger</button>`:''}
-      <a class="lb-btn" href="${url}" target="_blank" rel="noopener">Ouvrir ↗</a>
+      <a class="lb-btn" href="${url}" download="${f?(f.name||'photo').replace(/"/g,''):'photo'}" target="_blank" rel="noopener"><i class="ti ti-download"></i> Télécharger</a>
     </div>
     <span class="lb-close">✕</span>`;
   el.classList.add('open');
